@@ -1,0 +1,113 @@
+<?xml version="1.0" ?>
+<config>
+    <setting id="login_password" value="Neufone2020" />
+    <setting id="send_mac_with_useragent" value="1" />
+    <setting id="use_secure_labels" value="0" />
+    <setting id="time_zone" value="America/St_Johns" />
+    <setting id="time_source" value="ntp" />
+    <setting id="ntp_server" value="ca.pool.ntp.org" />
+    <setting id="ntp_resync" value="86400" />
+    <setting id="ntp_prefer_option42" value="1" /> <!-- Not D80 -->
+    <setting id="accept_local_calls" value="any" />
+    <setting id="transport_udp_enabled" value="1" />
+    <setting id="transport_udp_port" value="5060" />
+    <setting id="transport_tcp_enabled" value="0" />
+    <setting id="transport_tcp_port" value="5060" />
+    <setting id="transport_tls_allowed" value="0" /> <!-- D6X Phones Only -->
+    <setting id="transport_tls_port" value="5061" /> <!-- D6X Phones Only -->
+    <setting id="udp_ka_interval" value="5"/>
+    <setting id="wallpaper_file" value="user" path="/user_wallpaper.png" url="https://pro.altinc.ca/digium/assets/wallpaper.png" />
+    <setting id="display_mc_notification" value="1" />
+    <setting id="display_pickup_notification" value="1" />
+    <setting id="hide_completed_elsewhere" value="1" />
+    <setting id="small_clock" value="1" /> <!-- D6X Phones Only -->
+    <setting id="idle_company_text" value="Alt Telecom" />
+    <setting id="brightness" value="5" />
+    <setting id="enable_check_sync" value="1"/>
+    <setting id="dim_backlight" value="1" />
+    <setting id="backlight_timeout" value="30" />
+    <setting id="backlight_dim_level" value="2" />
+    <setting id="blf_page_return_timeout" value="0" />
+    <setting id="locale" value="en_US"/>
+    <setting id="ringer_volume" value="5" />
+    <setting id="lock_ringing_volume" value="0" /> <!-- Not D80 -->
+    <setting id="speaker_volume" value="5" />
+    <setting id="handset_volume" value="5" />
+    <setting id="headset_volume" value="5" />
+    <setting id="reset_call_volume" value="0" />
+    <setting id="ehs" value="auto" />
+    <setting id="call_control_checkx" value="0" />
+    <setting id="contacts_max_subscriptions" value="40" />
+    <setting id="name_format" value="first_last" />
+    <setting id="blf_contact_group" value="Default" />
+    <setting id="expansion_enable" value="0" type="EXP100" /> <!-- Only D65 -->
+    <setting id="network_enable_dhcp" value="1" />
+    <setting id="allow_insecure_ssl" value="1" />
+    <setting id="network_ipv6_enabled" value="0"/>
+    <setting id="network_ipv6_preferred" value="0"/>
+    <setting id="network_vlan_discovery_mode" value="Manual" />
+    <setting id="network_vlan_id" value="{{ vlan }}"/>
+    <setting id="lan_port_mode" value="auto" />
+    <setting id="pc_port_mode" value="auto" />
+    <setting id="log_level" value="debug" /> <!-- Not D80 -->
+    <setting id="enable_logging" value="0" /> <!-- Not D80 -->
+    <setting id="log_server" value="" /> <!-- Not D80 -->
+    <setting id="log_port" value="" /> <!-- Not D80 -->
+    <setting id="web_ui_enabled" value="1" /> <!-- Not D80 -->
+    <setting id="sip_qos" value="3" />
+    <setting id="rtp_qos" value="6" />
+    <setting id="pc_qos" value="" />
+    <setting id="sip_dscp" value="24" />
+    <setting id="rtp_dscp" value="46" />
+    <setting id="in_switchvox_environment" value="0" />
+    <setting id="allow_app_dev" value="0" />
+    <setting id="8021x_passthrough" value="0"/>
+    <setting id="8021x_eapol_on_disconnect" value="0"/>
+    <setting id="8021x_method" value=""/>
+    <setting id="8021x_identity" value=""/>
+    <setting id="8021x_anonymous_identity" value=""/>
+    <setting id="8021x_password" value=""/>
+    <setting id="8021x_client_cert" value=""/>
+    <setting id="8021x_client_key" value=""/>
+    <setting id="8021x_debug" value="" />
+    <setting id="network_default_enable_openvpn" value="0" />
+
+    <accounts>
+        <account
+        server_uuid="0" index="0" status="1" register="1"
+        account_id="{{ username1 }}" username="{{ username1 }}" authname="{{ username1 }}" password="{{ password1 }}" passcode="{{ password1 }}"
+        line_label="{{ display1 }}" caller_id="{{ ext1 }}" dial_plan="[0-8]xxxxx|911|411|611|011xxx.T3|1xxxxxxxxxx|[2-9]xxxxxx|[2-9]xxxxxxx|*xx.T3|[0-8]xx.T3"
+        visual_voicemail="0" voicemail="{{ ext1 }}" needMwiSubscription="1"
+        outbound_proxy="{{ server1 }}" outbound_port=""
+        plar_number="" ring_type="normal" subscription_extension="{{ ext1 }}" conflict="replace">
+            <host_primary server="{{ server1 }}" port="" transport="UDP" media_encryption="" reregister="180" retry="5" />
+            <permission id="use_voicemail" value="1" />
+            <permission id="send_to_voicemail" value="1" />
+            <permission id="ignore_calls" value="1" />
+        </account>
+</accounts>
+    <codecs>
+        <codec id="PCMU" priority="255" packetization="20" jitter_min="0" jitter_max="0" jitter_target="0" enabled="1" />
+        <codec id="PCMA" priority="13" packetization="20" jitter_min="0" jitter_max="0" jitter_target="0" enabled="1" />
+        <codec id="G722" priority="11" packetization="20" jitter_min="0" jitter_max="0" jitter_target="0" enabled="1" />
+        <codec id="G7221" priority="10" packetization="20" jitter_min="0" jitter_max="0" jitter_target="0" enabled="0" samplerate="uwb" bitrate="48000" />
+        <codec id="G726-32" priority="7" packetization="20" jitter_min="0" jitter_max="0" jitter_target="0" enabled="0" />
+        <codec id="opus" priority="6" packetization="20" jitter_min="0" jitter_max="0" jitter_target="0" enabled="0" complexity="10" samplerate="wb" use_vbr="0" />
+        <codec id="G729" priority="5" packetization="20" jitter_min="0" jitter_max="0" jitter_target="0" enabled="0" />
+        <codec id="iLBC" priority="4" packetization="30" jitter_min="0" jitter_max="0" jitter_target="0" enabled="0" />
+        <codec id="L16" priority="2" packetization="20" jitter_min="0" jitter_max="0" jitter_target="0" enabled="0" />
+        <codec id="L16-256" priority="1" packetization="20" jitter_min="0" jitter_max="0" jitter_target="0" enabled="0"/>
+    </codecs>
+<!--
+    <firmwares>
+        <firmware model="D40" version="2_8_0" url="https://pro.altinc.ca/fw/digium/2_9_10_D40_firmware.eff" />
+        <firmware model="D45" version="2_8_0" url="https://pro.altinc.ca/fw/digium/2_9_10_D45_firmware.eff" />
+        <firmware model="D50" version="2_8_0" url="https://pro.altinc.ca/fw/digium/2_9_10_D50_firmware.eff" />
+        <firmware model="D60" version="2_8_0" url="https://pro.altinc.ca/fw/digium/2_9_10_D60_firmware.eff" />
+        <firmware model="D62" version="2_8_0" url="https://pro.altinc.ca/fw/digium/2_9_10_D62_firmware.eff" />
+        <firmware model="D65" version="2_8_0" url="https://pro.altinc.ca/fw/digium/2_9_10_D65_firmware.eff" />
+        <firmware model="D70" version="2_8_0" url="https://pro.altinc.ca/fw/digium/2_9_10_D70_firmware.eff" />
+        <firmware model="D80" version="2_8_0" url="https://pro.altinc.ca/fw/digium/2_9_10_D80_firmware.eff" />
+    </firmwares>
+	-->
+</config>

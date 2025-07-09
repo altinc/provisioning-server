@@ -1,0 +1,67 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# SSL certificates
+ssl/*.pem
+ssl/*.crt
+ssl/*.key
+
+# Logs
+logs/
+*.log
+
+# Data directories
+data/backups/
+data/exports/
+
+# files
+files/
+
+#logs
+logs/
+
+# Docker volumes
+docker-volumes/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Config files with secrets
+config/.htpasswd
+config/secrets.yml

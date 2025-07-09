@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+     <!-- Include shared styles -->
+    {% include './shared-styles.html' %}
+
+</head>
+<body>
+    <!-- Include shared header and navigation -->
+    {% set current_page = 'troubleshoot' %}
+    {% set page_title = 'Troubleshooting' %}
+    {% set page_description = 'System troubleshooting tools' %}
+    {% set page_icon = 'fas fa-tachometer-alt' %}
+    {% include './shared-header.html' %}
+
+
+    <main class="main">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <!-- System Status -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">System Status</h2>
+                </div>
+                <div class="card-body">
+                    <button id="refreshStatusBtn" class="btn btn-primary mb-4">Refresh Status</button>
+                    <div id="systemStatus">
+                        <div class="loading">Loading system status...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cache Management -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Cache Management</h2>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Clear cached device data to force fresh lookups from Odoo.</p>
+                    <div class="form-group">
+                        <label class="form-label">Clear cache for specific device</label>
+                        <div class="d-flex gap-2">
+                            <input type="text" id="deviceMac" class="form-control" placeholder="MAC address (e.g., 001b2c3d4e5f)">
+                            <button id="clearDeviceCacheBtn" class="btn btn-secondary">Clear</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button id="clearAllCacheBtn" class="btn btn-danger">Clear All Cache</button>
+                    </div>
+                    <div id="cacheResult" class="mt-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Token Generator -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Authentication Token Generator</h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Note:</strong> These tokens are used for authenticated device provisioning. Current tokens are valid for 90 days.
+                </div>
+                <div class="form-group">
+                    <label class="form-label">MAC Address</label>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="tokenMac" class="form-control" placeholder="MAC address (e.g., 001b2c3d4e5f)">
+                        <button id="generateTokenBtn" class="btn btn-primary">Generate Token</button>
+                    </div>
+                </div>
+                <div id="tokenResult" class="mt-4"></div>
+            </div>
+        </div>
+
+        <!-- Device Lookup -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Device Lookup</h2>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">Look up device information from Odoo database.</p>
+                <div class="form-group">
+                    <label class="form-label">MAC Address</label>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="lookupMac" class="form-control" placeholder="MAC address (e.g., 001b2c3d4e5f)">
+                        <button id="lookupDeviceBtn" class="btn btn-primary">Lookup</button>
+                    </div>
+                </div>
+                <div id="lookupResult" class="mt-4"></div>
+            </div>
+        </div>
+
+        <!-- Security Audit -->
+<!-- 
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Security Audit</h2>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">Check system security configuration and best practices.</p>
+                <button id="runSecurityAuditBtn" class="btn btn-primary mb-4">Run Security Audit</button>
+                <div id="securityResult">
+                    <div class="loading">Click "Run Security Audit" to check system security...</div>
+                </div>
+            </div>
+        </div>
+ -->
+    </main>
+
+    <script>
+        // Helper function to copy text to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Provide visual feedback
+                console.log('Copied to clipboard:', text);
+                // You could add a temporary tooltip or flash effect here
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                // Fallback for older browsers
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    console.log('Copied to clipboard (fallback):', text);
+                } catch (fallbackErr) {
+                    console.error('Fallback copy failed:', fallbackErr);
+                }
+            });
+        }
+
+        // Helper function to make authenticated API requests
+        async function authenticatedFetch(url, options = {}) {
+            const response = await fetch(url, {
+                credentials: 'include', // Include authentication credentials
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            });
+            
+            // If we get HTML back instead of JSON, the endpoint might have returned an error page
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('text/html')) {
+                const text = await response.text();
+                console.error('Server returned HTML:', text);
+                throw new Error(`Authentication required. Please refresh the page and try again. (Status: ${response.status})`);
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            return response;
+        }
+
+        async function checkSystemStatus() {
+            const statusDiv = document.getElementById('systemStatus');
+            statusDiv.innerHTML = '<div class="loading">Checking system status...</div>';
+            
+            try {
+                const response = await authenticatedFetch('/admin/api/stats');
+                const data = await response.json();
+                
+                statusDiv.innerHTML = `
+                    <div class="stats-grid">
+                        <div style="text-align: center;">
+                            <div class="stat-value">${formatUptime(data.uptime)}</div>
+                            <div class="stat-label">Uptime</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div class="stat-value">${data.requests.total}</div>
+                            <div class="stat-label">Total Requests</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div class="stat-value">${data.devices.unique}</div>
+                            <div class="stat-label">Unique Devices</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div class="stat-value">
+                                <span class="status ${data.redis.connected ? 'status-success' : 'status-danger'}">
+                                    ${data.redis.connected ? 'Connected' : 'Disconnected'}
+                                </span>
+                            </div>
+                            <div class="stat-label">Redis</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div class="stat-value">${formatBytes(data.memory.heapUsed)}</div>
+                            <div class="stat-label">Memory Used</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div class="stat-value">${data.devices.active_today}</div>
+                            <div class="stat-label">Active Today</div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status status-danger">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function clearDeviceCache() {
+            const mac = document.getElementById('deviceMac').value.trim();
+            const resultDiv = document.getElementById('cacheResult');
+            
+            if (!mac) {
+                resultDiv.innerHTML = '<div class="status status-warning">Please enter a MAC address</div>';
+                return;
+            }
+
+            // Normalize MAC address
+            const normalizedMac = mac.replace(/[:-]/g, '').toLowerCase();
+            if (!/^[0-9a-f]{12}$/i.test(normalizedMac)) {
+                resultDiv.innerHTML = '<div class="status status-warning">Invalid MAC address format</div>';
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch(`/admin/api/cache/${normalizedMac}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="status status-success">${data.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="status status-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status status-danger">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function clearAllCache() {
+            const resultDiv = document.getElementById('cacheResult');
+            
+            if (!confirm('Are you sure you want to clear ALL cache? This will affect system performance temporarily.')) {
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch('/admin/api/cache', {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="status status-success">${data.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="status status-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status status-danger">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function generateToken() {
+            const mac = document.getElementById('tokenMac').value.trim();
+            const resultDiv = document.getElementById('tokenResult');
+            
+            if (!mac) {
+                resultDiv.innerHTML = '<div class="status status-warning">Please enter a MAC address</div>';
+                return;
+            }
+
+            // Normalize MAC address
+            const normalizedMac = mac.replace(/[:-]/g, '').toLowerCase();
+            if (!/^[0-9a-f]{12}$/i.test(normalizedMac)) {
+                resultDiv.innerHTML = '<div class="status status-warning">Invalid MAC address format</div>';
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch(`/admin/api/token/${normalizedMac}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="status status-success mb-2">Token generated successfully</div>
+                        <div class="font-mono text-sm">
+                            <strong>Current Token:</strong> ${data.tokens.current}
+                            <button class="btn btn-secondary copy-button" data-copy="${data.tokens.current}">Copy</button><br>
+                            <strong>Next Token:</strong> ${data.tokens.next}
+                            <button class="btn btn-secondary copy-button" data-copy="${data.tokens.next}">Copy</button><br><br>
+                            <strong>Sample URLs:</strong><br>
+                            <a href="${data.urls.config}" target="_blank">${data.urls.config}</a>
+                            <button class="btn btn-secondary copy-button" data-copy="${data.urls.config}">Copy</button><br>
+                            <a href="${data.urls.boot}" target="_blank">${data.urls.boot}</a>
+                            <button class="btn btn-secondary copy-button" data-copy="${data.urls.boot}">Copy</button><br>
+                            <strong>Legacy format:</strong><br>
+                            <a href="${data.urls.configLegacy}" target="_blank">${data.urls.configLegacy}</a>
+                            <button class="btn btn-secondary copy-button" data-copy="${data.urls.configLegacy}">Copy</button>
+                        </div>
+                    `;
+                    
+                    // Add event listeners to copy buttons
+                    resultDiv.querySelectorAll('.copy-button').forEach(button => {
+                        button.addEventListener('click', function() {
+                            copyToClipboard(this.dataset.copy);
+                        });
+                    });
+                } else {
+                    resultDiv.innerHTML = `<div class="status status-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status status-danger">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function lookupDevice() {
+            const mac = document.getElementById('lookupMac').value.trim();
+            const resultDiv = document.getElementById('lookupResult');
+            
+            if (!mac) {
+                resultDiv.innerHTML = '<div class="status status-warning">Please enter a MAC address</div>';
+                return;
+            }
+
+            // Normalize MAC address
+            const normalizedMac = mac.replace(/[:-]/g, '').toLowerCase();
+            if (!/^[0-9a-f]{12}$/i.test(normalizedMac)) {
+                resultDiv.innerHTML = '<div class="status status-warning">Invalid MAC address format</div>';
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch(`/admin/api/device/${normalizedMac}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="status status-success mb-2">Device found</div>
+                        <div class="font-mono text-sm mb-2">
+                            <strong>MAC:</strong> ${data.mac}<br>
+                            <strong>Partners:</strong> ${data.partners.length}<br>
+                            <strong>Organizations:</strong> ${data.organizations.length}
+                        </div>
+                        <pre class="font-mono text-sm">${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="status status-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status status-danger">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function runSecurityAudit() {
+            const resultDiv = document.getElementById('securityResult');
+            resultDiv.innerHTML = '<div class="loading">Running security audit...</div>';
+            
+            try {
+                const response = await authenticatedFetch('/admin/api/security-audit');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const overallClass = data.overall_status === 'SECURE' ? 'status-success' : 'status-warning';
+                    
+                    let checksHtml = '';
+                    Object.entries(data.checks).forEach(([key, check]) => {
+                        const statusClass = check.passed ? 'status-success' : 'status-danger';
+                        checksHtml += `
+                            <div style="margin-bottom: 0.5rem;">
+                                <span class="status ${statusClass}">${check.passed ? '✓' : '✗'}</span>
+                                <strong>${key.replace(/_/g, ' ').toUpperCase()}:</strong> ${check.message}
+                            </div>
+                        `;
+                    });
+                    
+                    resultDiv.innerHTML = `
+                        <div class="status ${overallClass} mb-4">Overall Status: ${data.overall_status}</div>
+                        ${checksHtml}
+                        <div class="text-muted text-sm mt-4">
+                            Audit completed at: ${new Date(data.timestamp).toLocaleString()}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="status status-danger">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status status-danger">Error: ${error.message}</div>`;
+            }
+        }
+
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (days > 0) {
+                return `${days}d ${hours}h ${minutes}m`;
+            } else if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else {
+                return `${minutes}m`;
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Auto-load system status on page load and set up event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up event listeners
+            document.getElementById('refreshStatusBtn').addEventListener('click', checkSystemStatus);
+            document.getElementById('clearDeviceCacheBtn').addEventListener('click', clearDeviceCache);
+            document.getElementById('clearAllCacheBtn').addEventListener('click', clearAllCache);
+            document.getElementById('generateTokenBtn').addEventListener('click', generateToken);
+            document.getElementById('lookupDeviceBtn').addEventListener('click', lookupDevice);
+//             document.getElementById('runSecurityAuditBtn').addEventListener('click', runSecurityAudit);
+
+            // Allow Enter key to trigger actions
+            document.getElementById('deviceMac').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') clearDeviceCache();
+            });
+            document.getElementById('tokenMac').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') generateToken();
+            });
+            document.getElementById('lookupMac').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') lookupDevice();
+            });
+
+            // Auto-load system status
+            checkSystemStatus();
+        });
+    </script>
+</body>
+</html>

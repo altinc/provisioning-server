@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YealinkIPPhoneTextMenu
+  Beep="no"
+  Timeout="30"
+  LockIn="no"
+  Title="Call Forwarding">
+  <MenuItem>
+    <Prompt>Ring Style: {% if enabled == 0 %}Off{% elif failover == 1 %}Failover{% elif substitute == 1 %}Cell Only{% else %}Desk + Cell{% endif %}</Prompt>
+    <URI>{{ ringStyleUrl }}</URI>
+  </MenuItem>
+  <MenuItem>
+    <Prompt>Number: {{ number }}</Prompt>
+    <URI>{{ numberUrl }}</URI>
+  </MenuItem>
+  <SoftKey index="1">
+    <Label>Select</Label>
+    <URI>SoftKey:Select</URI>
+  </SoftKey>
+  <SoftKey index="3">
+    <Label>Back</Label>
+    <URI>{{ appsMenuUrl }}</URI>
+  </SoftKey>
+  <SoftKey index="4">
+    <Label>Exit</Label>
+    <URI>Key:CANCEL</URI>
+  </SoftKey>
+</YealinkIPPhoneTextMenu>

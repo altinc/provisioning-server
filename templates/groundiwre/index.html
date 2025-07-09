@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: #fafafa;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .card {
+      background-color: #d3d3d3;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .card h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .card h2 {
+      font-size: 20px;
+      color: #666;
+      font-weight: normal;
+    }
+    
+    .instructions {
+      background-color: #d3d3d3;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 24px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .instructions h3 {
+      font-size: 18px;
+      color: #666;
+      font-weight: normal;
+      line-height: 1.8;
+    }
+    
+    .app-store-button {
+      display: inline-block;
+      margin: 20px 0;
+    }
+    
+    .app-store-button img {
+      height: 53px;
+      width: auto;
+    }
+    
+    .setup-button {
+      background-color: #19857b;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: background-color 0.3s;
+    }
+    
+    .setup-button:hover {
+      background-color: #147067;
+    }
+    
+    .error-container {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    
+    .error-icon {
+      font-size: 100px;
+      color: #dc3545;
+      margin-bottom: 20px;
+    }
+    
+    .error-container h1 {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    
+    .error-container p {
+      font-size: 18px;
+      color: #666;
+    }
+    
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .footer a {
+      color: inherit;
+      text-decoration: none;
+    }
+    
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    
+    .mobile-icon {
+      font-size: 1em;
+    }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {% if showSetup %}
+      <div class="card">
+        <h1>
+          <span class="mobile-icon">📱</span>
+          Alt Telecom
+        </h1>
+        <h2>Install Groundwire</h2>
+      </div>
+      
+      <div class="instructions">
+        <h3>
+          1. Click the App Store button to purchase Groundwire.<br>
+          2. Click the setup button to configure the application.
+        </h3>
+      </div>
+      
+      <div style="text-align: center;">
+        {% if userOS == 'ios' %}
+          <a href="{{ appStoreUrls.ios }}" class="app-store-button">
+            <img src="/apple-store-badge.png" alt="Download on the App Store">
+          </a>
+        {% elif userOS == 'android' %}
+          <a href="{{ appStoreUrls.android }}" class="app-store-button">
+            <img src="/google-play-badge.png" alt="Get it on Google Play">
+          </a>
+        {% endif %}
+        
+        <div>
+          <button class="setup-button" onclick="setupApp()">Click here to setup Groundwire</button>
+        </div>
+      </div>
+    {% endif %}
+    
+    {% if showError %}
+      <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <h1>Error!</h1>
+        <p>Please open this link on your cellphone to complete installation of Groundwire.</p>
+      </div>
+    {% endif %}
+  </div>
+  
+  <footer class="footer">
+    <p>Copyright © <a href="https://altinc.ca/">Alt Telecom</a> {{ currentYear }}.</p>
+  </footer>
+  
+  {% if showSetup %}
+  <script>
+    function setupApp() {
+      const provApp = '{{ provisioningUrl }}';
+      let change = false;
+      
+      // Set a timer to redirect to app store if the app doesn't open
+      setTimeout(() => {
+        if (!change) {
+          {% if userOS == 'android' %}
+            document.location.href = '{{ appStoreUrls.android }}';
+          {% elif userOS == 'ios' %}
+            document.location.href = '{{ appStoreUrls.ios }}';
+          {% endif %}
+        }
+      }, 2500);
+      
+      // Try to open the provisioning link
+      window.location.href = provApp;
+      
+      // Redirect to success page after a short delay
+      setTimeout(() => {
+        document.location.href = '/groundwire/success';
+      }, 25);
+      
+      // Detect if the app opened
+      window.onblur = function() {
+        change = true;
+      };
+      window.onfocus = function() {
+        change = false;
+      };
+    }
+  </script>
+  {% endif %}
+</body>
+</html>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<settings>
+  <phone-settings e="2">
+    <!-- Basic Settings -->
+    <web_language perm="">English</web_language>
+    <language perm="">English</language>
+    <tone_scheme perm="">USA</tone_scheme>
+    <ntp_server perm="">0.pool.ntp.org</ntp_server>
+    <ntp_refresh_timer perm="">3600</ntp_refresh_timer>
+    <timezone perm="">{{ timezone }}</timezone>
+    <dhcp perm="R">on</dhcp>
+    <phone_name perm="R">snomD735-{{ mac }}</phone_name>
+    <dim_timer perm="">20</dim_timer>
+    <backlight perm="">15</backlight>
+    <backlight_idle perm="">5</backlight_idle>
+    <display_method perm="">display_name_number</display_method>
+    <global_missed_counter perm="">on</global_missed_counter>
+    <dialnumber_us_format perm="">on</dialnumber_us_format>
+    <show_ivr_digits perm="">off</show_ivr_digits>
+    <!-- Ringtones -->
+    <alert_internal_ring_text perm="">alert-internal</alert_internal_ring_text>
+    <alert_internal_ring_sound perm="">Ringer1</alert_internal_ring_sound>
+    <alert_external_ring_text perm="">alert-external</alert_external_ring_text>
+    <alert_external_ring_sound perm="">Ringer2</alert_external_ring_sound>
+    <alert_group_ring_text perm="">alert-group</alert_group_ring_text>
+    <alert_group_ring_sound perm="">Ringer3</alert_group_ring_sound>
+    <!-- Wallpaper (320x240px PNG)-->
+    <custom_bg_image_url perm=""></custom_bg_image_url>
+    <!-- Expansion Mod (480x1280px PNG <2MB) -->
+    <expansion_module_background_image perm=""></expansion_module_background_image>
+    <!-- SIP Settings -->
+    <mwi_notification perm="">silent</mwi_notification>
+    <mwi_dialtone perm="">stutter</mwi_dialtone>
+    <enable_rport_rfc3581 perm="RW">on</enable_rport_rfc3581>
+    <privacy_in perm="">off</privacy_in>
+    <quick_transfer perm="">blind</quick_transfer>
+<!-- 
+	<call_screen_fkeys perm="">F_FAVORITES F_CALL_LIST F_SETTINGS F_REBOOT</call_screen_fkeys_on_connected>
+ -->
+ <context_key idx="0" perm="">keyevent F_FAVORITES</context_key>
+<context_key idx="1" perm="">keyevent F_CALL_LIST</context_key>
+<context_key idx="2" perm="">keyevent F_SETTINGS</context_key>
+<context_key idx="3" perm="">keyevent F_NONE</context_key>
+    <call_screen_fkeys_on_connected perm="">F_HOLD F_TRANSFER F_CONFERENCE</call_screen_fkeys_on_connected>
+    <!-- Updates -->
+    <update_policy perm="">auto_update</update_policy>
+    <setting_server perm="RW">https://pro.altinc.ca/{{ mac }}.snom</setting_server>
+    <http_client_user perm="">alt2020</http_client_user>
+    <http_client_pass perm="">fuzz2020</http_client_pass>
+    <!-- Admin Access -->
+    <http_user perm="R">admin</http_user>
+    <http_pass perm="R">Neufone2020</http_pass>
+    <web_logout_timer>5</web_logout_timer>
+    <admin_mode perm="R">on</admin_mode>
+    <admin_mode_password perm="R">admin</admin_mode_password>
+    <admin_mode_password_confirm perm="R">Neufone2020</admin_mode_password_confirm>
+
+    <!-- SIP Accounts -->
+<!-- 
+    <user_idle_text idx="1" perm="R">VALIDVALUE</user_idle_text>
+ -->
+    <user_active idx="1" perm="R">on</user_active>
+    <user_realname idx="1" perm="R">{{ display1 }}</user_realname>
+    <user_name idx="1" perm="R">{{ username1 }}</user_name>
+    <user_pass idx="1" perm="R">{{ password1 }}</user_pass>
+    <user_host idx="1" perm="R">{{ server1 }}</user_host>
+	<user_idle_number idx="1" perm="">Alt Telecom</user_idle_number>
+    <user_outbound idx="1" perm="R"></user_outbound>
+    <user_expiry idx="1" perm="R">360</user_expiry>
+    <user_server_type idx="1" perm="R">Default</user_server_type>
+    <user_srtp idx="1" perm="R">off</user_srtp>
+    <user_mailbox idx="1" perm="R">{{ ext1 }}</user_mailbox>
+    <user_symmetrical_rtp idx="1" perm="">on</user_symmetrical_rtp>
+    <user_ice idx="1" perm="">off</user_ice>
+    <user_dtmf_info idx="1" perm="">off</user_dtmf_info>
+    <stun_server idx="1" perm="R"></stun_server>
+    <stun_binding_interval idx="1" perm="R"></stun_binding_interval>
+    <codec_priority_list idx="1" perm="RW">g722,pcmu,pcma</codec_priority_list>
+    <keepalive_interval idx="1" perm="R">5</keepalive_interval>
+
+	<!-- kazoo specific config -->
+	<user_descr_contact idx="1" perm="R">off</user_descr_contact>
+	<user_sipusername_as_line idx="1" perm="R">on</user_sipusername_as_line>
+	<blf_directed_call_pickup idx="1" perm="R">**</blf_directed_call_pickup>
+
+
+<led_on perm="">idle CONNECTED ON BUSY IN_A_CALL CALLING IN_A_MEETING URGENT_INTERRUPTIONS_ONLY DND UNAVAILABLE ACTIVE INACTIVE BE_RIGHT_BACK AWAY SEIZED CONNECTED ON_HOLD OFFHOOK RINGBACK I-Am-Ready AVAILABLE I-Am-Busy PhoneHasCall PhoneHasMissedCalls</led_on>
+<led_blink_slow perm="">PARKED HOLDING I-Am-Almost-Ready call_center_status_normal PhoneHasCallInStateHolding held_local held_remote KeyConfigActive call_parked</led_blink_slow>
+<led_blink_medium perm="">RECORDING MESSAGE DateOngoing DateReminding</led_blink_medium>
+<led_blink_fast perm="">RINGING PICKUP call_center_status_exceed PhoneHasCallInStateRinging alerting_local alerting_remote</led_blink_fast>
+<led_red perm="">CONNECTED AWAY INACTIVE BE_RIGHT_BACK KeyConfigActiveBUSY DND_ALL DND_SELF I-Am-Busy IN_A_CALL IN_A_MEETING URGENT_INTERRUPTIONS_ONLY UNAVAILABLE seized_remote alerting_remote active_remote held_remote</led_red>
+<led_green perm="">idle AVAILABLE AVAILABLE_ON_MOBILE AVAILABLE_AT_DESK I-Am-Ready I-Am-Almost-Ready call_center_status_empty call_center_status_normal call_center_status_exceed seized_local alerting_local active_local held_local call_parked</led_green>
+<led_orange perm="">RINGING</led_orange>
+<led_blue perm=""></led_blue>
+<custom_bg_image_url perm="">http://pro.altinc.ca/gs/asset/GXP2170.jpg</custom_bg_image_url>
+<!-- <firmware perm="">https://downloads.snom.com/fw/10.1.101.11/bin/snomD735-10.1.101.11-SIP-r.bin</firmware> -->
+  </phone-settings>
+</settings>

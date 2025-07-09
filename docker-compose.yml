@@ -1,0 +1,139 @@
+services:
+  # Nginx SSL termination and reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+      - nginx-cache:/var/cache/nginx  # ADDED: Cache volume for firmware and static files
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - provisioning-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "https://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Node.js application (now private - only accessible via nginx)
+  app:
+    build: .
+    # Remove direct port exposure - only accessible via nginx
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - ODOO_HOST=${ODOO_HOST:-10.112.0.10}
+      - ODOO_PORT=${ODOO_PORT:-8069}
+      - ODOO_DB=${ODOO_DB:-altinc}
+      - ODOO_USER=${ODOO_USER:-odoo@altinc.ca}
+      - ODOO_PASSWORD=${ODOO_PASSWORD}
+      - AUTH_SECRET=${AUTH_SECRET}
+      - PROVISIONING_INTERVAL=${PROVISIONING_INTERVAL:-7776000}
+      - PROVISION_URL=${PROVISION_URL:-https://pro.altinc.ca}
+      - PROVISION_URL_BASE=${PROVISION_URL_BASE:-https://pro.altinc.ca}
+      - HTTP_AUTH_USERNAME=${HTTP_AUTH_USERNAME:-altinc}
+      - HTTP_AUTH_PASSWORD=${HTTP_AUTH_PASSWORD}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-altinc}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - KAZOO_URL=${KAZOO_URL:-altinc}
+      - KAZOO_ACCOUNT_ID=${KAZOO_ACCOUNT_ID:-altinc}
+      - KAZOO_API_KEY=${KAZOO_API_KEY:-altinc}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://pro.altinc.ca}
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-900000}
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100}
+      - ADMIN_RATE_LIMIT_MAX_REQUESTS=${ADMIN_RATE_LIMIT_MAX_REQUESTS:-20}
+      - DISABLE_TOKEN_AUTH=${DISABLE_TOKEN_AUTH}
+      # File directory configuration for mounted volumes
+      - FIRMWARE_DIR=/app/files/fw
+      - DEVICE_IMAGES_DIR=/app/files/devices
+      - ASSETS_DIR=/app/files/assets
+    depends_on:
+      - redis
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+      # Mount templates and files from host for persistent storage
+      - /opt/docker/prov/templates:/app/templates
+      - /opt/docker/prov/files:/app/files
+    networks:
+      - provisioning-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('https://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    # Remove direct port exposure - only accessible within network
+    expose:
+      - "6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru 
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - provisioning-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Redis Commander for cache management (development/debugging)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - HTTP_USER=${ADMIN_USERNAME:-admin}
+      - HTTP_PASSWORD=${ADMIN_PASSWORD:-password}
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - provisioning-network
+    profiles:
+      - tools
+
+  # Optional: Log aggregation and monitoring
+  log-monitor:
+    image: alpine:latest
+    command: tail -f /dev/null
+    volumes:
+      - ./logs:/app/logs:ro
+      - nginx-logs:/nginx/logs:ro
+    restart: unless-stopped
+    networks:
+      - provisioning-network
+    profiles:
+      - monitoring
+
+volumes:
+  redis-data:
+    driver: local
+  nginx-logs:
+    driver: local
+  nginx-cache:     # ADDED: Volume for nginx proxy cache
+    driver: local
+
+networks:
+  provisioning-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

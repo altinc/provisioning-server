@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xmlapp title="Voicemail">
+  <view>
+    <section>
+      <text />
+      <text label="Your settings have been updated successfully. Please press exit to close the application." />
+    </section>
+  </view>
+  <SoftKeys>
+    <Softkey action="QuitApp" label="Exit" /> 
+  </SoftKeys>
+  <Events>
+    <!-- Placeholder for future events -->
+  </Events>
+</xmlapp>

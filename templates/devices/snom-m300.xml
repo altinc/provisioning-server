@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+<global>
+<web_inputs_allowed>on</web_inputs_allowed>
+<pnp_config>on</pnp_config>
+<dhcp_option_pnp>on</dhcp_option_pnp>
+<setting_server></setting_server>
+<http_client_password>Neufone202</http_client_password>
+<http_client_user>admin</http_client_user>
+<management_transfer_protocol>https</management_transfer_protocol>
+<management_upload_script>/CfgUpload</management_upload_script>
+<ip_adr>0.0.0.0</ip_adr>
+<http_user>admin</http_user>
+<http_pass>Neufone2020</http_pass>
+<auto_dect_register>on</auto_dect_register>
+<syslog_server></syslog_server>
+<syslog_server_port>514</syslog_server_port>
+<ntp_server>01.yqm.mtlnog.org</ntp_server>
+<ntp_refresh_timer>3600</ntp_refresh_timer>
+<vlan_id>{{ vlan }}</vlan_id>
+<dhcp>on</dhcp>
+<phone_name>M300-{{ mac }}</phone_name>
+<repeater_legacy_support>on</repeater_legacy_support>
+<min_jittbuf_depth>2</min_jittbuf_depth>
+<max_jittbuf_depth>7</max_jittbuf_depth>
+<rtp_port_start>50004</rtp_port_start>
+<rtp_port_end>50043</rtp_port_end>
+<tone_scheme>USA</tone_scheme>
+<timezone_by_country_region>off</timezone_by_country_region>
+<dst_by_country_region>off</dst_by_country_region>
+<dst_enable>auto</dst_enable>
+<dst_fixed_day_enable>on</dst_fixed_day_enable>
+<dst_start_month>3</dst_start_month>
+<dst_start_date>0</dst_start_date>
+<dst_start_time>2</dst_start_time>
+<dst_start_day_of_week>1</dst_start_day_of_week>
+<dst_start_wday_last_in_month>2</dst_start_wday_last_in_month>
+<dst_stop_month>11</dst_stop_month>
+<dst_stop_date>0</dst_stop_date>
+<dst_stop_time>2</dst_stop_time>
+<dst_stop_day_of_week>1</dst_stop_day_of_week>
+<dst_stop_wday_last_in_month>1</dst_stop_wday_last_in_month>
+<timezone>{{ timezone }}</timezone>
+<web_language>English</web_language>
+<language></language>
+<ldap_name_attributes>cn</ldap_name_attributes>
+<ldap_search_filter></ldap_search_filter>
+<ldap_server></ldap_server>
+<ldap_port></ldap_port>
+<ldap_base></ldap_base>
+<ldap_username></ldap_username>
+<ldap_number_attributes>telephoneNumber mobile homePhone</ldap_number_attributes>
+<ldap_virtual_lists>on</ldap_virtual_lists>
+<phonebook_filename></phonebook_filename>
+<phonebook_location></phonebook_location>
+<phonebook_reload_time>0</phonebook_reload_time>
+<phonebook_server_location>0</phonebook_server_location>
+<stun_server></stun_server>
+<stun_binding_interval>90</stun_binding_interval>
+<sip_stun_bindtime_determine>on</sip_stun_bindtime_determine>
+<sip_stun_bindtime_guard>80</sip_stun_bindtime_guard>
+<dns_server1>0.0.0.0</dns_server1>
+<dns_server2>0.0.0.0</dns_server2>
+<sip_use_different_ports>off</sip_use_different_ports>
+<voip_sip_auto_upload>off</voip_sip_auto_upload>
+<sip_conf_key_dtmf_string></sip_conf_key_dtmf_string>
+<sip_r_key_dtmf_string></sip_r_key_dtmf_string>
+<vlan_qos>0</vlan_qos>
+<codec_tos>160</codec_tos>
+<signaling_tos>160</signaling_tos>
+<gateway>0.0.0.0</gateway>
+<netmask>255.255.255.0</netmask>
+<network_id_port>5060</network_id_port>
+<network_vlan_synchronization>on</network_vlan_synchronization>
+<dialplan_enabled>off</dialplan_enabled>
+<dialplan_maxlength>0</dialplan_maxlength>
+<dialplan_prefix></dialplan_prefix>
+<rtp_collision_control>off</rtp_collision_control>
+<network_sntp_broadcast_enable>on</network_sntp_broadcast_enable>
+<enable_rport_rfc3581>on</enable_rport_rfc3581>
+<tls_server_authentication>off</tls_server_authentication>
+<log_level>6</log_level>
+<!-- <ac_code>**********</ac_code> -->
+<country_region_id>0</country_region_id>
+<fwu_tftp_server_image_path></fwu_tftp_server_image_path>
+<allow_call_groups>on</allow_call_groups>
+<sip_check_sync_always_reboot>off</sip_check_sync_always_reboot>
+<mdns_support>off</mdns_support>
+<secure_web>off</secure_web>
+<text_msg_server></text_msg_server>
+<text_msg_port>1300</text_msg_port>
+<text_msg_keep_alive>30</text_msg_keep_alive>
+<text_msg_ttl>0</text_msg_ttl>
+<text_msg_responce_time>30</text_msg_responce_time>
+<text_msg_mode>disabled</text_msg_mode>
+<number_of_base_stations>50</number_of_base_stations>
+<ldap_tls>off</ldap_tls>
+<eth_driver_initialize>off</eth_driver_initialize>
+</global>
+<server>
+<!-- Server1 -->
+<user_srtp idx="1">off</user_srtp>
+<user_host idx="1">{{ server1 }}</user_host>
+<srv_sip_server_alias idx="1">one</srv_sip_server_alias>
+<srv_sip_show_ext_name_in_hs idx="1">off</srv_sip_show_ext_name_in_hs>
+<srv_sip_enable_blind_transfer idx="1">on</srv_sip_enable_blind_transfer>
+<keepalive_interval idx="1">on</keepalive_interval>
+<timer_support idx="1">on</timer_support>
+<session_timer idx="1">3600</session_timer>
+<srv_sip_signal_tcp_port idx="1">on</srv_sip_signal_tcp_port>
+<srv_sip_use_one_tcp_conn_per_ext idx="1">off</srv_sip_use_one_tcp_conn_per_ext>
+<user_outbound idx="1"></user_outbound>
+<conferencing idx="1"></conferencing>
+<srv_srtp_auth idx="1">off</srv_srtp_auth>
+<user_full_sdp_answer idx="1">off</user_full_sdp_answer>
+<srv_sip_rtp_base_equal idx="1">disabled</srv_sip_rtp_base_equal>
+<srv_sip_ua_data_server_nat_adaption idx="1">enabled</srv_sip_ua_data_server_nat_adaption>
+<srv_dtmf_payload_type idx="1">101</srv_dtmf_payload_type>
+<user_hold_inactive idx="1">off</user_hold_inactive>
+<srv_sip_transport idx="1">udp</srv_sip_transport>
+<user_dtmf_info idx="1">off</user_dtmf_info>
+<codec_size idx="1">20</codec_size>
+<codec_priority_list idx="1">pcmu, pcma, g726, g729</codec_priority_list>
+<user_auth_tag idx="1">on</user_auth_tag>
+<user_expiry idx="1">3600</user_expiry>
+<srv_att_transfer_2nd_call_on_hold idx="1">on</srv_att_transfer_2nd_call_on_hold>
+<srv_bw_directed_call_pickup_enable idx="1">off</srv_bw_directed_call_pickup_enable>
+<srv_bw_directed_call_pickup_code idx="1"></srv_bw_directed_call_pickup_code>
+<srv_bw_group_call_pickup_enable idx="1">off</srv_bw_group_call_pickup_enable>
+<srv_bw_group_call_pickup_code idx="1"></srv_bw_group_call_pickup_code>
+<srv_broadsoft_calllog_enable idx="1">off</srv_broadsoft_calllog_enable>
+<srv_broadsoft_calllog_server_addr idx="1"></srv_broadsoft_calllog_server_addr>
+<srv_sip_cli_mode idx="1">0</srv_sip_cli_mode>
+<alert_info_playback idx="1">on</alert_info_playback>
+<!-- /Server1 -->
+
+<!-- Server1 -->
+<!-- 
+<user_srtp idx="2">off</user_srtp>
+<user_host idx="2">{{ server1 }}</user_host>
+<srv_sip_server_alias idx="2">alt2</srv_sip_server_alias>
+<srv_sip_show_ext_name_in_hs idx="2">on</srv_sip_show_ext_name_in_hs>
+<srv_sip_enable_blind_transfer idx="2">on</srv_sip_enable_blind_transfer>
+<keepalive_interval idx="2">on</keepalive_interval>
+<timer_support idx="2">on</timer_support>
+<session_timer idx="2">3600</session_timer>
+<srv_sip_signal_tcp_port idx="2">on</srv_sip_signal_tcp_port>
+<srv_sip_use_one_tcp_conn_per_ext idx="2">off</srv_sip_use_one_tcp_conn_per_ext>
+<user_outbound idx="2"></user_outbound>
+<conferencing idx="2"></conferencing>
+<srv_srtp_auth idx="2">off</srv_srtp_auth>
+<user_full_sdp_answer idx="2">off</user_full_sdp_answer>
+<srv_sip_rtp_base_equal idx="2">disabled</srv_sip_rtp_base_equal>
+<srv_sip_ua_data_server_nat_adaption idx="2">enabled</srv_sip_ua_data_server_nat_adaption>
+<srv_dtmf_payload_type idx="2">101</srv_dtmf_payload_type>
+<user_hold_inactive idx="2">off</user_hold_inactive>
+<srv_sip_transport idx="2">udp</srv_sip_transport>
+<user_dtmf_info idx="2">off</user_dtmf_info>
+<codec_size idx="2">20</codec_size>
+<codec_priority_list idx="2">pcmu, pcma, g726, g729</codec_priority_list>
+<user_auth_tag idx="2">on</user_auth_tag>
+<user_expiry idx="2">3600</user_expiry>
+<srv_att_transfer_2nd_call_on_hold idx="2">on</srv_att_transfer_2nd_call_on_hold>
+<srv_bw_directed_call_pickup_enable idx="2">off</srv_bw_directed_call_pickup_enable>
+<srv_bw_directed_call_pickup_code idx="2"></srv_bw_directed_call_pickup_code>
+<srv_bw_group_call_pickup_enable idx="2">off</srv_bw_group_call_pickup_enable>
+<srv_bw_group_call_pickup_code idx="2"></srv_bw_group_call_pickup_code>
+<srv_broadsoft_calllog_enable idx="2">off</srv_broadsoft_calllog_enable>
+<srv_broadsoft_calllog_server_addr idx="2"></srv_broadsoft_calllog_server_addr>
+<srv_sip_cli_mode idx="2">0</srv_sip_cli_mode>
+<alert_info_playback idx="2">on</alert_info_playback>
+ -->
+<!-- /Server1 -->
+
+</server>
+<extension>
+<!-- User1 -->
+<user_name idx="1">{{ username1 }}</user_name>
+<user_realname idx="1">{{ display1 }}</user_realname>
+<user_pname idx="1">{{ username1 }}</user_pname>
+<user_pass idx="1">{{ password1 }}</user_pass>
+<user_active idx="1">on</user_active>
+<fwd_all_enabled idx="1">off</fwd_all_enabled>
+<fwd_all_target idx="1"></fwd_all_target>
+<fwd_time_enabled idx="1">off</fwd_time_enabled>
+<fwd_time_target idx="1"></fwd_time_target>
+<fwd_busy_enabled idx="1">off</fwd_busy_enabled>
+<fwd_busy_target idx="1"></fwd_busy_target>
+<fwd_time_secs idx="1">90</fwd_time_secs>
+<subscr_sip_hs_idx idx="1">1</subscr_sip_hs_idx>
+<subscr_sip_ua_subscribed_hs idx="1">1</subscr_sip_ua_subscribed_hs>
+<subscr_sip_line_name idx="1"></subscr_sip_line_name>
+<subscr_sip_ua_data_server_id idx="1">1</subscr_sip_ua_data_server_id>
+<user_mailbox idx="1">{{ ext1 }}</user_mailbox>
+<subscr_dect_ipui idx="1">0x{{ handset1 }}</subscr_dect_ipui>
+<subscr_ua_data_emergency_number idx="1"></subscr_ua_data_emergency_number>
+<subscr_ua_data_emergency_line idx="1">1</subscr_ua_data_emergency_line>
+<subscr_sip_ua_use_base idx="1">255</subscr_sip_ua_use_base>
+<subscr_sip_ua_pref_outg_sip_id idx="1"></subscr_sip_ua_pref_outg_sip_id>
+<dfks idx="1">off</dfks>
+<call_waiting idx="1">off</call_waiting>
+
+<user_mailnumber idx="1">{{ ext1 }}</user_mailnumber>
+
+<user_shared_line idx="1">off</user_shared_line>
+<user_shared_line_mapping idx="1">65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 13622, 12854, 53, 1, 1, 1, 1, 1</user_shared_line_mapping>
+<subscr_ua_data_bw_blf_reslist_uri idx="1"></subscr_ua_data_bw_blf_reslist_uri>
+<subscr_ua_data_emergency_profiles idx="1">00000000</subscr_ua_data_emergency_profiles>
+<!-- /User1 -->
+<!-- User2 -->
+<user_name idx="2">{{ username2 }}</user_name>
+<user_realname idx="2">{{ display2 }}</user_realname>
+<user_pname idx="2">{{ username2 }}</user_pname>
+<user_pass idx="2">{{ password2 }}</user_pass>
+<user_active idx="2">on</user_active>
+<fwd_all_enabled idx="2">off</fwd_all_enabled>
+<fwd_all_target idx="2"></fwd_all_target>
+<fwd_time_enabled idx="2">off</fwd_time_enabled>
+<fwd_time_target idx="2"></fwd_time_target>
+<fwd_busy_enabled idx="2">off</fwd_busy_enabled>
+<fwd_busy_target idx="2"></fwd_busy_target>
+<fwd_time_secs idx="2">90</fwd_time_secs>
+<subscr_sip_hs_idx idx="2">1</subscr_sip_hs_idx>
+<subscr_sip_ua_subscribed_hs idx="2">2</subscr_sip_ua_subscribed_hs>
+<subscr_sip_line_name idx="2"></subscr_sip_line_name>
+<subscr_sip_ua_data_server_id idx="2">1</subscr_sip_ua_data_server_id>
+<user_mailbox idx="2">{{ ext2 }}</user_mailbox>
+<subscr_dect_ipui idx="2">0x{{ handset2 }}</subscr_dect_ipui>
+<subscr_ua_data_emergency_number idx="2"></subscr_ua_data_emergency_number>
+<subscr_ua_data_emergency_line idx="2">1</subscr_ua_data_emergency_line>
+<subscr_sip_ua_use_base idx="2">255</subscr_sip_ua_use_base>
+<subscr_sip_ua_pref_outg_sip_id idx="2"></subscr_sip_ua_pref_outg_sip_id>
+<dfks idx="2">off</dfks>
+<call_waiting idx="2">off</call_waiting>
+
+<user_mailnumber idx="2">{{ ext2 }}</user_mailnumber>
+<user_shared_line idx="2">off</user_shared_line>
+<user_shared_line_mapping idx="2">65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 13622, 12854, 53, 1, 1, 1, 1, 1</user_shared_line_mapping>
+<subscr_ua_data_bw_blf_reslist_uri idx="2"></subscr_ua_data_bw_blf_reslist_uri>
+<subscr_ua_data_emergency_profiles idx="2">00000000</subscr_ua_data_emergency_profiles>
+<!-- /User2 -->
+<!-- User3 -->
+<user_name idx="3">{{ username3 }}</user_name>
+<user_realname idx="3">{{ display3 }}</user_realname>
+<user_pname idx="3">{{ username3 }}</user_pname>
+<user_pass idx="3">{{ password3 }}</user_pass>
+<user_active idx="3">on</user_active>
+<fwd_all_enabled idx="3">off</fwd_all_enabled>
+<fwd_all_target idx="3"></fwd_all_target>
+<fwd_time_enabled idx="3">off</fwd_time_enabled>
+<fwd_time_target idx="3"></fwd_time_target>
+<fwd_busy_enabled idx="3">off</fwd_busy_enabled>
+<fwd_busy_target idx="3"></fwd_busy_target>
+<fwd_time_secs idx="3">90</fwd_time_secs>
+<subscr_sip_hs_idx idx="3">1</subscr_sip_hs_idx>
+<subscr_sip_ua_subscribed_hs idx="3">4</subscr_sip_ua_subscribed_hs>
+<subscr_sip_line_name idx="3"></subscr_sip_line_name>
+<subscr_sip_ua_data_server_id idx="3">1</subscr_sip_ua_data_server_id>
+<user_mailbox idx="3">{{ ext3 }}</user_mailbox>
+<subscr_dect_ipui idx="3">0x{{ handset3 }}</subscr_dect_ipui>
+<subscr_ua_data_emergency_number idx="3"></subscr_ua_data_emergency_number>
+<subscr_ua_data_emergency_line idx="3">1</subscr_ua_data_emergency_line>
+<subscr_sip_ua_use_base idx="3">255</subscr_sip_ua_use_base>
+<subscr_sip_ua_pref_outg_sip_id idx="3"></subscr_sip_ua_pref_outg_sip_id>
+<dfks idx="3">off</dfks>
+<call_waiting idx="3">off</call_waiting>
+
+<user_mailnumber idx="3">{{ ext3 }}</user_mailnumber>
+<user_shared_line idx="3">off</user_shared_line>
+<user_shared_line_mapping idx="3">65535, 65535, 65535, 65535, 65535, 65535, 65535, 65535, 13622, 12854, 53, 1, 1, 1, 1, 1</user_shared_line_mapping>
+<subscr_ua_data_bw_blf_reslist_uri idx="3"></subscr_ua_data_bw_blf_reslist_uri>
+<subscr_ua_data_emergency_profiles idx="3">00000000</subscr_ua_data_emergency_profiles>
+<!-- /User3 -->
+</extension>
+<repeater>
+</repeater>
+<multicell>
+</multicell>
+<emergency>
+<profile_alias idx="1"></profile_alias>
+<alarm_type idx="1">off</alarm_type>
+<alarm_signal idx="1">call</alarm_signal>
+<alarm_stop_allowed idx="1">on</alarm_stop_allowed>
+<trigger_delay idx="1">0</trigger_delay>
+<pre_alarm_stop_allowed idx="1">on</pre_alarm_stop_allowed>
+<pre_alarm_delay idx="1">0</pre_alarm_delay>
+<alarm_howling idx="1">off</alarm_howling>
+<profile_alias idx="2"></profile_alias>
+<alarm_type idx="2">off</alarm_type>
+<alarm_signal idx="2">call</alarm_signal>
+<alarm_stop_allowed idx="2">on</alarm_stop_allowed>
+<trigger_delay idx="2">0</trigger_delay>
+<pre_alarm_stop_allowed idx="2">on</pre_alarm_stop_allowed>
+<pre_alarm_delay idx="2">0</pre_alarm_delay>
+<alarm_howling idx="2">off</alarm_howling>
+<profile_alias idx="3"></profile_alias>
+<alarm_type idx="3">off</alarm_type>
+<alarm_signal idx="3">call</alarm_signal>
+<alarm_stop_allowed idx="3">on</alarm_stop_allowed>
+<trigger_delay idx="3">0</trigger_delay>
+<pre_alarm_stop_allowed idx="3">on</pre_alarm_stop_allowed>
+<pre_alarm_delay idx="3">0</pre_alarm_delay>
+<alarm_howling idx="3">off</alarm_howling>
+<profile_alias idx="4"></profile_alias>
+<alarm_type idx="4">off</alarm_type>
+<alarm_signal idx="4">call</alarm_signal>
+<alarm_stop_allowed idx="4">on</alarm_stop_allowed>
+<trigger_delay idx="4">0</trigger_delay>
+<pre_alarm_stop_allowed idx="4">on</pre_alarm_stop_allowed>
+<pre_alarm_delay idx="4">0</pre_alarm_delay>
+<alarm_howling idx="4">off</alarm_howling>
+<profile_alias idx="5"></profile_alias>
+<alarm_type idx="5">off</alarm_type>
+<alarm_signal idx="5">call</alarm_signal>
+<alarm_stop_allowed idx="5">on</alarm_stop_allowed>
+<trigger_delay idx="5">0</trigger_delay>
+<pre_alarm_stop_allowed idx="5">on</pre_alarm_stop_allowed>
+<pre_alarm_delay idx="5">0</pre_alarm_delay>
+<alarm_howling idx="5">off</alarm_howling>
+<profile_alias idx="6"></profile_alias>
+<alarm_type idx="6">off</alarm_type>
+<alarm_signal idx="6">call</alarm_signal>
+<alarm_stop_allowed idx="6">on</alarm_stop_allowed>
+<trigger_delay idx="6">0</trigger_delay>
+<pre_alarm_stop_allowed idx="6">on</pre_alarm_stop_allowed>
+<pre_alarm_delay idx="6">0</pre_alarm_delay>
+<alarm_howling idx="6">off</alarm_howling>
+<profile_alias idx="7"></profile_alias>
+<alarm_type idx="7">off</alarm_type>
+<alarm_signal idx="7">call</alarm_signal>
+<alarm_stop_allowed idx="7">on</alarm_stop_allowed>
+<trigger_delay idx="7">0</trigger_delay>
+<pre_alarm_stop_allowed idx="7">on</pre_alarm_stop_allowed>
+<pre_alarm_delay idx="7">0</pre_alarm_delay>
+<alarm_howling idx="7">off</alarm_howling>
+<profile_alias idx="8"></profile_alias>
+<alarm_type idx="8">off</alarm_type>
+<alarm_signal idx="8">call</alarm_signal>
+<alarm_stop_allowed idx="8">on</alarm_stop_allowed>
+<trigger_delay idx="8">0</trigger_delay>
+<pre_alarm_stop_allowed idx="8">on</pre_alarm_stop_allowed>
+<pre_alarm_delay idx="8">0</pre_alarm_delay>
+<alarm_howling idx="8">off</alarm_howling>
+</emergency>
+</settings>

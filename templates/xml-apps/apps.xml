@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xmlapp title="Apps">
+ <view>
+ <section>
+ <text label="Follow-Me: Individual extension forwarding"/>
+ <text label="Voicemail: Individual voicemail settings"/>
+ <text label="CallControl: Inbound Call Management"/>
+ </section>
+</view>
+<SoftKeys>
+<Softkey action="AppendInputURL" label="Follow-Me" commandArgs="{{ cfwdUrl }}" />
+<Softkey action="AppendInputURL" label="Voicemail" commandArgs="{{ voicemailUrl }}" />
+<Softkey action="AppendInputURL" label="CallControl" commandArgs="{{ redirectUrl }}" />
+<Softkey action="QuitApp" label="Exit" />
+ </SoftKeys>
+<Events>
+</Events>
+</xmlapp>

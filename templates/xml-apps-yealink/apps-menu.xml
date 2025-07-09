@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YealinkIPPhoneTextMenu
+  style="numbered"
+  Beep="no"
+  Timeout="30"
+  LockIn="no"
+  wrapList="yes">
+  <Title wrap="yes">Phone Applications</Title>
+  <MenuItem>
+    <Prompt>Follow-Me (Call Forwarding)</Prompt>
+    <URI>{{ cfwdUrl }}</URI>
+  </MenuItem>
+  <MenuItem>
+    <Prompt>Voicemail Settings</Prompt>
+    <URI>{{ voicemailUrl }}</URI>
+  </MenuItem>
+  <MenuItem>
+    <Prompt>Call Routing</Prompt>
+    <URI>{{ redirectUrl }}</URI>
+  </MenuItem>
+  <SoftKey index="1">
+    <Label>Select</Label>
+    <URI>SoftKey:Select</URI>
+  </SoftKey>
+  <SoftKey index="4">
+    <Label>Exit</Label>
+    <URI>Key:CANCEL</URI>
+  </SoftKey>
+</YealinkIPPhoneTextMenu>

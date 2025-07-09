@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xmlapp title="{% block title %}XML Application{% endblock %}">
+ <view>
+  <section>
+  {% block content %}
+    <text label="No content available." />
+  {% endblock %}
+  </section>
+ </view>
+ <SoftKeys>
+ {% block softkeys %}
+  <Softkey action="QuitApp" label="Exit" />
+ {% endblock %}
+ </SoftKeys>
+ <Events>
+ {% block events %}
+ {% endblock %}
+ </Events>
+</xmlapp>

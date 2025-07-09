@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YealinkIPPhoneTextMenu
+  Beep="no"
+  Timeout="30"
+  LockIn="no"
+  Title="{{ ruleName }}">
+  <MenuItem>
+    <Prompt>Based on Time</Prompt>
+    <URI>{{ saveUrl }}?ruleId={{ ruleId }}&amp;status=time</URI>
+  </MenuItem>
+  <MenuItem>
+    <Prompt>Always On</Prompt>
+    <URI>{{ saveUrl }}?ruleId={{ ruleId }}&amp;status=on</URI>
+  </MenuItem>
+  <MenuItem>
+    <Prompt>Always Off</Prompt>
+    <URI>{{ saveUrl }}?ruleId={{ ruleId }}&amp;status=off</URI>
+  </MenuItem>
+  <SoftKey index="1">
+    <Label>Select</Label>
+    <URI>SoftKey:Select</URI>
+  </SoftKey>
+  <SoftKey index="3">
+    <Label>Back</Label>
+    <URI>{{ redirectUrl }}</URI>
+  </SoftKey>
+  <SoftKey index="4">
+    <Label>Exit</Label>
+    <URI>Key:CANCEL</URI>
+  </SoftKey>
+</YealinkIPPhoneTextMenu>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YealinkIPPhoneTextMenu
+  Beep="no"
+  Timeout="30"
+  LockIn="no"
+  Title="VM to Email Setting">
+  <MenuItem>
+    <Prompt>Enable VM to Email</Prompt>
+    <URI>{{ saveUrl }}?email={{ email }}&amp;vm_to_email_enabled=true</URI>
+  </MenuItem>
+  <MenuItem>
+    <Prompt>Disable VM to Email</Prompt>
+    <URI>{{ saveUrl }}?email={{ email }}&amp;vm_to_email_enabled=false</URI>
+  </MenuItem>
+  
+  <SoftKey index="1">
+    <Label>Select</Label>
+    <URI>SoftKey:Select</URI>
+  </SoftKey>
+  <SoftKey index="3">
+    <Label>Back</Label>
+    <URI>{{ voicemailUrl }}</URI>
+  </SoftKey>
+  <SoftKey index="4">
+    <Label>Exit</Label>
+    <URI>Key:CANCEL</URI>
+  </SoftKey>
+</YealinkIPPhoneTextMenu>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YealinkIPPhoneTextMenu
+  Beep="no"
+  Timeout="30"
+  LockIn="no"
+  Title="Select Ring Style">
+  <MenuItem>
+    <Prompt>Desk + Cell</Prompt>
+    <URI>{{ saveUrl }}?substitute=0&amp;number={{ number }}</URI>
+  </MenuItem>
+  <MenuItem>
+    <Prompt>Cell Only</Prompt>
+    <URI>{{ saveUrl }}?substitute=1&amp;number={{ number }}</URI>
+  </MenuItem>
+  <MenuItem>
+    <Prompt>Failover</Prompt>
+    <URI>{{ saveUrl }}?substitute=2&amp;number={{ number }}</URI>
+  </MenuItem>
+  <MenuItem>
+    <Prompt>Off</Prompt>
+    <URI>{{ saveUrl }}?substitute=4&amp;number={{ number }}</URI>
+  </MenuItem>
+  <SoftKey index="1">
+    <Label>Select</Label>
+    <URI>SoftKey:Select</URI>
+  </SoftKey>
+  <SoftKey index="3">
+    <Label>Back</Label>
+    <URI>{{ cfwdUrl }}</URI>
+  </SoftKey>
+  <SoftKey index="4">
+    <Label>Exit</Label>
+    <URI>Key:CANCEL</URI>
+  </SoftKey>
+</YealinkIPPhoneTextMenu>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title | default('Dashboard - VoIP Provisioning Admin') }}</title>
+    
+    <!-- Include shared styles (ALL CSS is now here) -->
+    {% include './shared-styles.html' %}
+</head>
+<body>
+    <!-- Include shared header and navigation -->
+    {% set current_page = 'dashboard' %}
+    {% set page_title = 'VoIP Provisioning Server' %}
+    {% set page_description = 'Administrative Dashboard' %}
+    {% set page_icon = 'fas fa-tachometer-alt' %}
+    {% include './shared-header.html' %}
+
+    <main class="main">
+        <!-- System Stats - using .stats-grid-dashboard for 2 rows of 4 cards -->
+        <div class="stats-grid-dashboard">
+            <div class="stat-card">
+                <div class="stat-value">{{ uptime }}</div>
+                <div class="stat-label">System Uptime</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ memory.heapUsedPercent }}%</div>
+                <div class="stat-label">Memory Usage</div>
+                <div class="progress mt-2">
+                    <div class="progress-bar" style="width: {{ memory.heapUsedPercent }}%"></div>
+                </div>
+                <div class="text-xs text-muted mt-1">{{ memory.heapUsed }} / {{ memory.heapTotal }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">
+                    {% if redisStatus.connected %}
+                        <span class="status status-success">Connected</span>
+                    {% else %}
+                        <span class="status status-danger">Disconnected</span>
+                    {% endif %}
+                </div>
+                <div class="stat-label">Redis Status</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.totalRequests }}</div>
+                <div class="stat-label">Total Requests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.successfulRequests }}</div>
+                <div class="stat-label">Successful Requests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.failedRequests }}</div>
+                <div class="stat-label">Failed Requests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.uniqueDevices }}</div>
+                <div class="stat-label">Unique Devices</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.authFailures }}</div>
+                <div class="stat-label">Auth Failures</div>
+            </div>
+        </div>
+
+        <!-- Recent Activity - using shared .card classes -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <!-- Recent Logs -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Activity</h2>
+                </div>
+                <div class="card-body">
+                    {% if recentLogs and recentLogs | length > 0 %}
+                        {% for log in recentLogs %}
+                        <!-- Using shared .log-entry classes -->
+                        <div class="log-entry {{ log.level }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-xs text-muted">{{ log.formattedTimestamp }}</span>
+                                <span class="status {% if log.level == 'info' %}status-success{% elif log.level == 'warn' %}status-warning{% elif log.level == 'error' %}status-danger{% else %}status-info{% endif %}">
+                                    {{ log.level | upper }}
+                                </span>
+                            </div>
+                            <div class="mt-1">{{ log.message }}</div>
+                            {% if log.ip %}
+                                <div class="text-xs text-muted mt-1">IP: {{ log.ip }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="text-muted">No recent activity</div>
+                        </div>
+                    {% endif %}
+                    <div class="text-center mt-4">
+                        <a href="/admin/logs" class="btn btn-secondary">View All Logs</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Errors -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Errors</h2>
+                </div>
+                <div class="card-body">
+                    {% if recentErrors and recentErrors | length > 0 %}
+                        {% for error in recentErrors %}
+                        <div class="log-entry error">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-xs text-muted">{{ error.formattedTimestamp }}</span>
+                                <span class="status status-danger">ERROR</span>
+                            </div>
+                            <div class="mt-1">{{ error.message }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="text-muted">No recent errors</div>
+                        </div>
+                    {% endif %}
+                    <div class="text-center mt-4">
+                        <a href="/admin/logs?file=error" class="btn btn-secondary">View Error Logs</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

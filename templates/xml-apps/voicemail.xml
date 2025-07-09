@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xmlapp title="Voicemail">
+  <view>
+    <section>
+      <select label="Voicemail to Email" name=":vm_to_email_enabled" type="single">
+        {% if vm_to_email_enabled == 1 %}
+        <option text="Yes" value="1" />
+        <option text="No" value="0" />
+        {% else %}
+        <option text="No" value="0" />
+        <option text="Yes" value="1" />
+        {% endif %}
+      </select>
+      <input label="Email Address" name=":email" type="text" maxLength="100" value="{{ email }}"></input>
+    </section>
+  </view>
+  <SoftKeys>
+    <Softkey action="AppendInputURL" label="Save" commandArgs="{{ saveUrl }}" /> 
+    <Softkey action="QuitApp" label="Exit" /> 
+  </SoftKeys>
+  <Events>
+    <!-- Placeholder for future events -->
+  </Events>
+</xmlapp>

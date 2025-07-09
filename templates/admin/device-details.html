@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+     <!-- Include shared styles -->
+    {% include './shared-styles.html' %}
+
+</head>
+<body>
+    <!-- Include shared header and navigation -->
+    {% set current_page = 'device-details' %}
+    {% set page_title = 'VoIP Provisioning Server' %}
+    {% set page_description = 'Administrative Dashboard' %}
+    {% set page_icon = 'fas fa-tachometer-alt' %}
+    {% include './shared-header.html' %}
+
+
+    <main class="main">
+        <!-- Device Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.totalRequests }}</div>
+                <div class="stat-label">Total Requests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.successfulRequests }}</div>
+                <div class="stat-label">Successful</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.failedRequests }}</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">
+                    {% if stats.lastSeen %}
+                        {{ stats.lastSeen | timeAgo }}
+                    {% else %}
+                        Never
+                    {% endif %}
+                </div>
+                <div class="stat-label">Last Seen</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <!-- Device Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Device Information</h2>
+                </div>
+                <div class="card-body">
+                    {% if deviceData %}
+                        <dl>
+                            <dt>MAC Address:</dt>
+                            <dd class="font-mono">{{ mac }}</dd>
+                            
+                            {% if deviceData.device.x_model %}
+                            <dt>Model:</dt>
+                            <dd>{{ deviceData.device.x_model }}</dd>
+                            {% endif %}
+                            
+                            {% if deviceData.device.x_vlan %}
+                            <dt>VLAN:</dt>
+                            <dd>{{ deviceData.device.x_vlan }}</dd>
+                            {% endif %}
+                            
+                            {% if deviceData.device.x_last_prov %}
+                            <dt>Last Provision:</dt>
+                            <dd>{{ deviceData.device.x_last_prov | formatTimestamp }}</dd>
+                            {% endif %}
+                            
+                            {% if deviceData.site %}
+                                {% if deviceData.site.x_city %}
+                                <dt>Location:</dt>
+                                <dd>{{ deviceData.site.x_city[1] if deviceData.site.x_city[1] else deviceData.site.x_city }}</dd>
+                                {% endif %}
+                                
+                                {% if deviceData.site.x_tz %}
+                                <dt>Timezone:</dt>
+                                <dd>{{ deviceData.site.x_tz }}</dd>
+                                {% endif %}
+                            {% endif %}
+                        </dl>
+                    {% else %}
+                        <div class="text-muted">Device not found in system</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Associated Users -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Associated Users</h2>
+                </div>
+                <div class="card-body">
+                    {% if deviceData and deviceData.partners and deviceData.partners | length > 0 %}
+                        {% for partner in deviceData.partners %}
+                        <div class="mb-4 p-3" style="border: 1px solid #e2e8f0; border-radius: 6px;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>{{ partner.firstname }}</strong>
+                                {% if partner.x_kazoo_enabled %}
+                                    <span class="status status-success">Kazoo Enabled</span>
+                                {% else %}
+                                    <span class="status status-info">Legacy</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-sm text-muted">
+                                Extension: {{ partner.x_voip_ext or 'None' }}<br>
+                                Username: {{ partner.x_voip_user or 'None' }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-muted">No associated users</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity History -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Recent Activity</h2>
+            </div>
+            <div class="card-body">
+                {% if history and history | length > 0 %}
+                    {% for entry in history %}
+                    <div class="log-entry {{ entry.level }}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-xs text-muted">{{ entry.timestamp }}</span>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if entry.statusCode %}
+                                    <span class="text-xs">{{ entry.statusCode }}</span>
+                                {% endif %}
+                                <span class="status {% if entry.level == 'info' %}status-success{% elif entry.level == 'warn' %}status-warning{% elif entry.level == 'error' %}status-danger{% else %}status-info{% endif %}">
+                                    {{ entry.level | upper }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="mt-1">{{ entry.message }}</div>
+                        {% if entry.url %}
+                            <div class="text-xs text-muted mt-1">{% if entry.method %}{{ entry.method }}{% else %}GET{% endif %} {{ entry.url }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <div class="text-muted">No activity history found</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</body>
+</html>

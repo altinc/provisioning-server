@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xmlapp title="Follow-Me">
+ <view>
+ <section>
+<select label="Follow Me" name=":substitute" type="single">
+{% if enabled == 0 %}
+<option text="Off" value="4" />
+<option text="Failover" value="2" />
+<option text="Cell Only" value="1" />
+<option text="Desk + Cell" value="0" />
+{% elif failover == 1 %}
+<option text="Failover" value="2" />
+<option text="Cell Only" value="1" />
+<option text="Desk + Cell" value="0" />
+<option text="Off" value="4" />
+{% elif substitute == 1 %}
+<option text="Cell Only" value="1" />
+<option text="Desk + Cell" value="0" />
+<option text="Failover" value="2" />
+<option text="Off" value="4" />
+{% else %}
+<option text="Desk + Cell" value="0" />
+<option text="Cell Only" value="1" />
+<option text="Failover" value="2" />
+<option text="Off" value="4" />
+{% endif %}
+</select>
+<input label="Destination" name=":number" type="number" maxLength="32" value="{{ number }}"></input>
+<!-- 
+
+<select label="Require Keypress" name=":require_keypress" type="single">
+{% if require_keypress == 1 %}
+<option text="Yes" value="1" />
+<option text="No" value="0" />
+{% else %}
+<option text="No" value="0" />
+<option text="Yes" value="1" />
+{% endif %}
+</select>
+
+<select label="Keep caller ID" name=":keep_caller_id" type="single">
+{% if keep_caller_id == 1 %}
+<option text="Yes" value="1" />
+<option text="No" value="0" />
+{% else %}
+<option text="No" value="0" />
+<option text="Yes" value="1" />
+{% endif %}
+</select>
+ -->
+
+
+<select label="Direct calls only" name=":direct_calls_only" type="single">
+{% if direct_calls_only == 1 %}
+<option text="Yes" value="1" />
+<option text="No" value="0" />
+{% else %}
+<option text="No" value="0" />
+<option text="Yes" value="1" />
+{% endif %}
+</select>
+
+ </section>
+</view>
+<SoftKeys>
+    <Softkey action="AppendInputURL" label="Save" commandArgs="{{ saveUrl }}?rule_ids={{ ruleIds }}" /> 
+    <Softkey action="QuitApp" label="Exit" /> 
+ </SoftKeys>
+<Events>
+ </Events>
+</xmlapp>

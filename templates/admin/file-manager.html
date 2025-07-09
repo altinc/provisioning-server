@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title | default('File Manager - VoIP Provisioning Admin') }}</title>
+    
+    <!-- Include shared styles -->
+    {% include './shared-styles.html' %}
+</head>
+<body>
+    <!-- Include shared header and navigation -->
+    {% set current_page = 'files' %}
+    {% set page_title = 'File Manager' %}
+    {% set page_description = 'Manage firmware, device images, and assets' %}
+    {% set page_icon = 'fas fa-folder-open' %}
+    {% include './shared-header.html' %}
+
+    <main class="main">
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="firmware-count">-</div>
+                <div class="stat-label">Firmware Files</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="device-count">-</div>
+                <div class="stat-label">Device Images</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="asset-count">-</div>
+                <div class="stat-label">Background Assets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="total-count">-</div>
+                <div class="stat-label">Total Files</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <button class="btn btn-success" id="upload-modal-btn">
+                    <i class="fas fa-upload"></i> Upload Files
+                </button>
+                <button class="btn btn-secondary" id="refresh-btn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="btn btn-danger" id="delete-btn" disabled>
+                    <i class="fas fa-trash"></i> Delete Selected
+                </button>
+                <div class="view-toggle">
+                    <button class="btn btn-primary btn-sm" id="table-view-btn" data-view="table">
+                        <i class="fas fa-list"></i> Table
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="grid-view-btn" data-view="grid">
+                        <i class="fas fa-th"></i> Grid
+                    </button>
+                </div>
+                <span id="loading" class="loading" style="display: none;"></span>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="firmware">
+                    <i class="fas fa-microchip"></i> Firmware
+                </button>
+                <button class="tab" data-tab="devices">
+                    <i class="fas fa-image"></i> Device Images
+                </button>
+                <button class="tab" data-tab="assets">
+                    <i class="fas fa-palette"></i> Background Assets
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="card-body">
+                <div id="firmware-tab" class="tab-content active">
+                    <div id="firmware-files"></div>
+                </div>
+
+                <div id="devices-tab" class="tab-content">
+                    <div id="devices-files"></div>
+                </div>
+
+                <div id="assets-tab" class="tab-content">
+                    <div id="assets-files"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Upload Modal -->
+    <div id="upload-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="close-modal-btn">&times;</button>
+            <h3 class="mb-4">Upload Files</h3>
+
+            <div class="form-group">
+                <label for="file-type" class="form-label">File Type:</label>
+                <select id="file-type" class="form-control">
+                    <option value="firmware">Firmware (.bin, .rom, .img, .tar, .zip, .gz)</option>
+                    <option value="devices">Device Images (.png)</option>
+                    <option value="assets">Background Assets (.jpg, .jpeg)</option>
+                </select>
+            </div>
+
+            <div class="upload-area" id="upload-area">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Drop files here or click to browse</p>
+                <p class="text-sm text-muted">Maximum file size: 50MB</p>
+                <input type="file" id="file-input" multiple style="display: none;">
+            </div>
+
+            <div class="upload-progress" id="upload-progress">
+                <div class="upload-progress-bar" id="upload-progress-bar"></div>
+            </div>
+
+            <div id="upload-results"></div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <button class="btn btn-secondary" id="cancel-upload-btn">Cancel</button>
+                <button class="btn btn-success" id="start-upload-btn" disabled>
+                    <i class="fas fa-upload"></i> Upload
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let fileData = {
+            firmware: [],
+            devices: [],
+            assets: []
+        };
+        let selectedFiles = new Set();
+        let currentView = 'table';
+        let currentTab = 'firmware';
+        let uploadFiles = [];
+
+        // Initialize the file manager
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('File manager initializing...');
+            setupEventListeners();
+            loadFileStats();
+            loadFiles('firmware');
+            setupUploadArea();
+            toggleView('table'); // Set initial view
+        });
+
+        // Setup all event listeners (CSP-compliant)
+        function setupEventListeners() {
+            // Toolbar buttons
+            document.getElementById('upload-modal-btn').addEventListener('click', showUploadModal);
+            document.getElementById('refresh-btn').addEventListener('click', refreshFiles);
+            document.getElementById('delete-btn').addEventListener('click', deleteSelected);
+            
+            // View toggle buttons
+            document.getElementById('table-view-btn').addEventListener('click', function() {
+                toggleView('table');
+            });
+            document.getElementById('grid-view-btn').addEventListener('click', function() {
+                toggleView('grid');
+            });
+            
+            // Tab buttons
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    switchTab(this.dataset.tab);
+                });
+            });
+            
+            // Modal buttons
+            document.getElementById('close-modal-btn').addEventListener('click', closeUploadModal);
+            document.getElementById('cancel-upload-btn').addEventListener('click', closeUploadModal);
+            document.getElementById('start-upload-btn').addEventListener('click', startUpload);
+            
+            // Close modal when clicking outside
+            document.getElementById('upload-modal').addEventListener('click', function(event) {
+                if (event.target === this) {
+                    closeUploadModal();
+                }
+            });
+            
+            // Close modal with ESC key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeUploadModal();
+                }
+            });
+        }
+
+        // Load file statistics
+        async function loadFileStats() {
+            try {
+                const response = await fetch('/admin/files');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                
+                document.getElementById('firmware-count').textContent = data.summary.firmware || 0;
+                document.getElementById('device-count').textContent = data.summary.devices || 0;
+                document.getElementById('asset-count').textContent = data.summary.assets || 0;
+                document.getElementById('total-count').textContent = data.summary.total || 0;
+                
+                console.log('File stats loaded:', data.summary);
+            } catch (error) {
+                console.error('Error loading file stats:', error);
+                showAlert('Error loading file statistics', 'danger');
+                
+                // Set fallback values
+                document.getElementById('firmware-count').textContent = '0';
+                document.getElementById('device-count').textContent = '0';
+                document.getElementById('asset-count').textContent = '0';
+                document.getElementById('total-count').textContent = '0';
+            }
+        }
+
+        // Load files for a specific type
+        async function loadFiles(type) {
+            console.log(`Loading ${type} files...`);
+            showLoading(true);
+            
+            try {
+                const response = await fetch(`/admin/files/${type}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                fileData[type] = data.files || [];
+                renderFileList(type);
+                console.log(`Loaded ${fileData[type].length} ${type} files`);
+            } catch (error) {
+                console.error(`Error loading ${type} files:`, error);
+                showAlert(`Error loading ${type} files: ${error.message}`, 'danger');
+                document.getElementById(`${type}-files`).innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Error Loading Files</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+            
+            showLoading(false);
+        }
+
+        // Render file list
+        function renderFileList(type) {
+            const container = document.getElementById(`${type}-files`);
+            const files = fileData[type];
+
+            if (files.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <h3>No ${type} files found</h3>
+                        <p>Upload some files to get started</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (currentView === 'table') {
+                renderTableView(container, files, type);
+            } else {
+                renderGridView(container, files, type);
+            }
+            
+            // Setup event listeners for dynamically created elements
+            setupFileEventListeners(type);
+        }
+
+        function renderTableView(container, files, type) {
+            const table = `
+                <div class="table-container">
+                    <table class="file-list">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="select-all-${type}"></th>
+                                <th>Name</th>
+                                <th>Size</th>
+                                <th>Modified</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${files.map(file => `
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="file-checkbox" data-type="${type}" data-filename="${file.name}">
+                                    </td>
+                                    <td>
+                                        <i class="fas ${getFileIcon(file.name)} file-icon"></i>
+                                        ${file.name}
+                                    </td>
+                                    <td class="file-size">${formatBytes(file.size || 0)}</td>
+                                    <td class="text-sm">${formatDate(file.modified)}</td>
+                                    <td class="file-actions">
+                                        <button class="download-btn" data-url="${file.url || '#'}" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="delete-file-btn" data-type="${type}" data-filename="${file.name}" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            container.innerHTML = table;
+        }
+
+        function renderGridView(container, files, type) {
+            const grid = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <label class="d-flex align-items-center gap-2">
+                        <input type="checkbox" id="select-all-${type}">
+                        Select All
+                    </label>
+                </div>
+                <div class="file-grid">
+                    ${files.map(file => `
+                        <div class="file-card">
+                            <input type="checkbox" class="file-checkbox" data-type="${type}" data-filename="${file.name}" style="margin-bottom: 0.5rem;">
+                            <i class="fas ${getFileIcon(file.name)} file-icon"></i>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size text-xs">${formatBytes(file.size || 0)}</div>
+                            <div class="text-xs text-muted">${formatDate(file.modified)}</div>
+                            <div class="file-actions mt-2">
+                                <button class="download-btn" data-url="${file.url || '#'}" title="Download">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="delete-file-btn" data-type="${type}" data-filename="${file.name}" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            container.innerHTML = grid;
+        }
+
+        // Setup event listeners for dynamically created file elements
+        function setupFileEventListeners(type) {
+            // Select all checkbox
+            const selectAllCheckbox = document.getElementById(`select-all-${type}`);
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    toggleSelectAll(type);
+                });
+            }
+            
+            // Individual file checkboxes
+            document.querySelectorAll(`#${type}-tab .file-checkbox`).forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    toggleFileSelection(this.dataset.type, this.dataset.filename);
+                });
+            });
+            
+            // Download buttons
+            document.querySelectorAll(`#${type}-tab .download-btn`).forEach(btn => {
+                btn.addEventListener('click', function() {
+                    downloadFile(this.dataset.url);
+                });
+            });
+            
+            // Delete buttons
+            document.querySelectorAll(`#${type}-tab .delete-file-btn`).forEach(btn => {
+                btn.addEventListener('click', function() {
+                    deleteFile(this.dataset.type, this.dataset.filename);
+                });
+            });
+        }
+
+        // Toggle view between table and grid
+        function toggleView(view) {
+            console.log(`Switching to ${view} view`);
+            currentView = view;
+            
+            // Update button states
+            document.getElementById('table-view-btn').className = view === 'table' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+            document.getElementById('grid-view-btn').className = view === 'grid' ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm';
+            
+            // Re-render current tab
+            renderFileList(currentTab);
+        }
+
+        // Tab switching
+        function switchTab(type) {
+            console.log(`Switching to ${type} tab`);
+            currentTab = type;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[data-tab="${type}"]`).classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${type}-tab`).classList.add('active');
+
+            // Load files if not already loaded
+            if (fileData[type].length === 0) {
+                loadFiles(type);
+            } else {
+                renderFileList(type);
+            }
+
+            // Clear selections
+            selectedFiles.clear();
+            updateDeleteButton();
+        }
+
+        // File selection
+        function toggleFileSelection(type, filename) {
+            const key = `${type}:${filename}`;
+            if (selectedFiles.has(key)) {
+                selectedFiles.delete(key);
+            } else {
+                selectedFiles.add(key);
+            }
+            updateDeleteButton();
+            console.log('Selected files:', Array.from(selectedFiles));
+        }
+
+        function toggleSelectAll(type) {
+            const checkbox = document.getElementById(`select-all-${type}`);
+            const fileCheckboxes = document.querySelectorAll(`#${type}-tab .file-checkbox`);
+
+            fileCheckboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+                const filename = cb.dataset.filename;
+                const key = `${type}:${filename}`;
+
+                if (checkbox.checked) {
+                    selectedFiles.add(key);
+                } else {
+                    selectedFiles.delete(key);
+                }
+            });
+
+            updateDeleteButton();
+        }
+
+        function updateDeleteButton() {
+            const deleteBtn = document.getElementById('delete-btn');
+            deleteBtn.disabled = selectedFiles.size === 0;
+        }
+
+        // Upload functionality
+        function setupUploadArea() {
+            console.log('Setting up upload area...');
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = document.getElementById('file-input');
+
+            uploadArea.addEventListener('click', () => {
+                console.log('Upload area clicked');
+                fileInput.click();
+            });
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                console.log('Files dropped:', e.dataTransfer.files);
+                handleFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                console.log('Files selected:', e.target.files);
+                handleFiles(e.target.files);
+            });
+        }
+
+        function handleFiles(files) {
+            console.log('Handling files:', files);
+            uploadFiles = Array.from(files);
+            
+            const uploadBtn = document.getElementById('start-upload-btn');
+            uploadBtn.disabled = files.length === 0;
+
+            // Show file list
+            const results = document.getElementById('upload-results');
+            if (files.length > 0) {
+                results.innerHTML = `
+                    <div class="alert alert-info">
+                        <h4>Selected Files (${files.length})</h4>
+                        <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                            ${Array.from(files).map(file => `
+                                <li>${file.name} (${formatBytes(file.size)})</li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            } else {
+                results.innerHTML = '';
+            }
+        }
+
+        // Modal functions
+        function showUploadModal() {
+            console.log('Showing upload modal');
+            const modal = document.getElementById('upload-modal');
+            modal.classList.add('show');
+        }
+
+        function closeUploadModal() {
+            console.log('Closing upload modal');
+            const modal = document.getElementById('upload-modal');
+            modal.classList.remove('show');
+            
+            // Reset form
+            document.getElementById('upload-results').innerHTML = '';
+            document.getElementById('file-input').value = '';
+            document.getElementById('start-upload-btn').disabled = true;
+            document.getElementById('upload-progress').classList.remove('show');
+            document.getElementById('upload-progress-bar').style.width = '0%';
+            uploadFiles = [];
+        }
+
+        // File operations
+        async function startUpload() {
+            if (uploadFiles.length === 0) {
+                showAlert('No files selected', 'warning');
+                return;
+            }
+
+            console.log('Starting upload of', uploadFiles.length, 'files');
+            
+            const fileType = document.getElementById('file-type').value;
+            const progressBar = document.getElementById('upload-progress-bar');
+            const progressContainer = document.getElementById('upload-progress');
+            const uploadBtn = document.getElementById('start-upload-btn');
+            
+            // Show progress bar
+            progressContainer.classList.add('show');
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+            try {
+                const formData = new FormData();
+                formData.append('type', fileType);
+                
+                uploadFiles.forEach(file => {
+                    formData.append('files', file);
+                });
+
+                const xhr = new XMLHttpRequest();
+                
+                // Upload progress
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressBar.style.width = percentComplete + '%';
+                    }
+                });
+                
+                // Upload complete
+                xhr.addEventListener('load', () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        showAlert(`Successfully uploaded ${uploadFiles.length} files to ${fileType}`, 'success');
+                        loadFiles(currentTab);
+                        loadFileStats();
+                        closeUploadModal();
+                    } else {
+                        throw new Error(`Upload failed: ${xhr.statusText}`);
+                    }
+                });
+                
+                xhr.addEventListener('error', () => {
+                    throw new Error('Upload failed: Network error');
+                });
+                
+                xhr.open('POST', `/admin/files/${fileType}/upload`);
+                xhr.send(formData);
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                showAlert(`Upload failed: ${error.message}`, 'danger');
+                
+                progressContainer.classList.remove('show');
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload';
+            }
+        }
+
+        function downloadFile(url) {
+            console.log('Downloading file:', url);
+            if (url && url !== '#') {
+                window.open(url, '_blank');
+            } else {
+                showAlert('Download URL not available', 'warning');
+            }
+        }
+
+        async function deleteFile(type, filename) {
+            if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
+            
+            console.log(`Deleting file: ${type}/${filename}`);
+            
+            try {
+                const response = await fetch(`/admin/files/${type}/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Delete failed: ${response.statusText}`);
+                }
+                
+                // Remove from local data
+                fileData[type] = fileData[type].filter(file => file.name !== filename);
+                
+                // Re-render
+                renderFileList(type);
+                loadFileStats();
+                
+                showAlert(`Successfully deleted ${filename}`, 'success');
+                
+            } catch (error) {
+                console.error('Delete error:', error);
+                showAlert(`Failed to delete ${filename}: ${error.message}`, 'danger');
+            }
+        }
+
+        async function deleteSelected() {
+            if (selectedFiles.size === 0) return;
+            
+            const fileCount = selectedFiles.size;
+            if (!confirm(`Are you sure you want to delete ${fileCount} selected files?`)) return;
+            
+            console.log('Deleting selected files:', Array.from(selectedFiles));
+            
+            try {
+                const deletePromises = Array.from(selectedFiles).map(key => {
+                    const [type, filename] = key.split(':');
+                    return fetch(`/admin/files/${type}/${encodeURIComponent(filename)}`, {
+                        method: 'DELETE'
+                    });
+                });
+                
+                await Promise.all(deletePromises);
+                
+                // Remove from local data
+                selectedFiles.forEach(key => {
+                    const [type, filename] = key.split(':');
+                    fileData[type] = fileData[type].filter(file => file.name !== filename);
+                });
+                
+                // Clear selections and re-render
+                selectedFiles.clear();
+                renderFileList(currentTab);
+                updateDeleteButton();
+                loadFileStats();
+                
+                showAlert(`Successfully deleted ${fileCount} files`, 'success');
+                
+            } catch (error) {
+                console.error('Bulk delete error:', error);
+                showAlert(`Failed to delete files: ${error.message}`, 'danger');
+            }
+        }
+
+        function refreshFiles() {
+            console.log('Refreshing files...');
+            loadFiles(currentTab);
+            loadFileStats();
+            showAlert('Files refreshed', 'info');
+        }
+
+        // Utility functions
+        function getFileIcon(filename) {
+            const ext = filename.toLowerCase().split('.').pop();
+            const icons = {
+                'bin': 'fa-microchip',
+                'rom': 'fa-microchip',
+                'img': 'fa-compact-disc',
+                'tar': 'fa-file-archive',
+                'zip': 'fa-file-archive',
+                'gz': 'fa-file-archive',
+                'png': 'fa-image',
+                'jpg': 'fa-image',
+                'jpeg': 'fa-image'
+            };
+            return icons[ext] || 'fa-file';
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+            return new Date(dateString).toLocaleString();
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showAlert(message, type = 'info') {
+            console.log(`Alert (${type}):`, message);
+            
+            // Remove existing alerts
+            document.querySelectorAll('.alert').forEach(alert => alert.remove());
+            
+            // Create new alert
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <strong>${type === 'danger' ? 'Error!' : type === 'success' ? 'Success!' : type === 'warning' ? 'Warning!' : 'Info:'}</strong> ${message}
+                <button class="btn-close">&times;</button>
+            `;
+            
+            // Add close button event listener
+            alert.querySelector('.btn-close').addEventListener('click', function() {
+                alert.remove();
+            });
+            
+            // Insert at top of main content
+            const main = document.querySelector('.main');
+            main.insertBefore(alert, main.firstChild);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentElement) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

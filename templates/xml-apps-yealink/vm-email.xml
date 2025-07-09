@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YealinkIPPhoneInputScreen
+  Beep="no"
+  Timeout="30"
+  LockIn="no"
+  Title="Enter Email Address">
+  <InputField type="string">
+    <Prompt>Email:</Prompt>
+    <Parameter>email</Parameter>
+    <Default>{{ email }}</Default>
+  </InputField>
+  
+  <URL>{{ saveUrl }}?vm_to_email_enabled={{ vm_to_email_enabled }}</URL>
+  
+  <SoftKey index="1">
+    <Label>Save</Label>
+    <URI>SoftKey:Submit</URI>
+  </SoftKey>
+  <SoftKey index="2">
+    <Label>Del</Label>
+    <URI>SoftKey:BackSpace</URI>
+  </SoftKey>
+  <SoftKey index="3">
+    <Label>Back</Label>
+    <URI>{{ voicemailUrl }}</URI>
+  </SoftKey>
+  <SoftKey index="4">
+    <Label>Exit</Label>
+    <URI>Key:CANCEL</URI>
+  </SoftKey>
+</YealinkIPPhoneInputScreen>

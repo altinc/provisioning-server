@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YealinkIPPhoneTextScreen
+  Beep="no"
+  Timeout="10"
+  LockIn="no">
+  <Title>Call Forwarding Updated</Title>
+  <Text>
+Your call forwarding settings 
+have been successfully saved.
+
+The change will take effect immediately.
+  </Text>
+  
+  <SoftKey index="1">
+    <Label>Back</Label>
+    <URI>{{ returnUrl }}</URI>
+  </SoftKey>
+  <SoftKey index="3">
+    <Label>Menu</Label>
+    <URI>{{ menuUrl }}</URI>
+  </SoftKey>
+  <SoftKey index="4">
+    <Label>Exit</Label>
+    <URI>Key:CANCEL</URI>
+  </SoftKey>
+</YealinkIPPhoneTextScreen>

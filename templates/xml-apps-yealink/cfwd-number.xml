@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YealinkIPPhoneInputScreen
+  Beep="no"
+  Timeout="30"
+  LockIn="no"
+  Title="Enter Forward Number">
+  <InputField type="number">
+    <Prompt>Number:</Prompt>
+    <Parameter>number</Parameter>
+    <Default>{{ number }}</Default>
+  </InputField>
+  <URL>{{ saveUrl }}?substitute={% if enabled == 0 %}4{% elif failover == 1 %}2{% elif substitute == 1 %}1{% else %}0{% endif %}</URL>
+  <SoftKey index="1">
+    <Label>Save</Label>
+    <URI>SoftKey:Submit</URI>
+  </SoftKey>
+  <SoftKey index="3">
+    <Label>Back</Label>
+    <URI>{{ cfwdUrl }}</URI>
+  </SoftKey>
+  <SoftKey index="4">
+    <Label>Exit</Label>
+    <URI>Key:CANCEL</URI>
+  </SoftKey>
+</YealinkIPPhoneInputScreen>

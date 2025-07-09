@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YealinkIPPhoneTextScreen
+  Beep="no"
+  Timeout="15"
+  LockIn="no">
+  <Title wrap="yes">Voicemail Settings</Title>
+  <Text>Your voicemail settings have been updated successfully.</Text>
+  <SoftKey index="1">
+    <Label>Back</Label>
+    <URI>{{ returnUrl }}</URI>
+  </SoftKey>
+  <SoftKey index="3">
+    <Label>Menu</Label>
+    <URI>{{ menuUrl }}</URI>
+  </SoftKey>
+  <SoftKey index="4">
+    <Label>Exit</Label>
+    <URI>SoftKey:Exit</URI>
+  </SoftKey>
+</YealinkIPPhoneTextScreen>

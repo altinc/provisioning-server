@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<YealinkIPPhoneTextMenu
+  Beep="no"
+  Timeout="30"
+  LockIn="no"
+  Title="Call Routing">
+  {% for ruleName in ruleNames %}
+  <MenuItem>
+    <Prompt>{{ ruleName }}: {% if ruleStates[loop.index0] == 'time' %}Time Based{% elif ruleStates[loop.index0] == 'on' %}Always On{% else %}Always Off{% endif %}</Prompt>
+    <URI>{{ redirectRuleUrl }}?ruleId={{ ruleIds[loop.index0] }}&amp;ruleName={{ ruleName }}&amp;state={{ ruleStates[loop.index0] }}</URI>
+  </MenuItem>
+  {% endfor %}
+  <SoftKey index="1">
+    <Label>Select</Label>
+    <URI>SoftKey:Select</URI>
+  </SoftKey>
+  <SoftKey index="3">
+    <Label>Back</Label>
+    <URI>{{ menuUrl }}</URI>
+  </SoftKey>
+  <SoftKey index="4">
+    <Label>Exit</Label>
+    <URI>Key:CANCEL</URI>
+  </SoftKey>
+</YealinkIPPhoneTextMenu>

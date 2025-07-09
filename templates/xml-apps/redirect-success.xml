@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xmlapp title="{{ title | default('CallControl') }}">
+  <view>
+    <section>
+      <text />
+      <text label="The configuration has been updated successfully. Please press exit to close the application." />
+    </section>
+  </view>
+  <SoftKeys>
+    <Softkey action="QuitApp" label="Exit" /> 
+  </SoftKeys>
+  <Events>
+  </Events>
+</xmlapp>

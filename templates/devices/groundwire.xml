@@ -1,0 +1,55 @@
+<account>
+<title>{{ display1 }}</title>
+<username>{{ username1 }}</username>
+<password>{{ password1 }}</password>
+<host>{{ server1 }}</host>
+<voiceMailNumber>{{ ext1 }}</voiceMailNumber>
+<subscribeForVoicemail>1</subscribeForVoicemail>
+<codecOrder>0,8,3</codecOrder>
+<codecOrder3G>0,8,3</codecOrder3G>
+<udpFromUnknownAddresses>0</udpFromUnknownAddresses>
+<extProvUrl>https://pro.altinc.ca/odoo/{{ pid }}.gw</extProvUrl>
+<extProvInterval>250</extProvInterval>
+
+{% if server1 == "73745277.alttelecom.ca" %}
+<!-- SMS Configuration -->
+<genericSmsSendUrl>https://text.inluck.ca/api/send_message</genericSmsSendUrl>
+<genericSmsSendPostData>{ "from": "%account[username]%", "password": "%account[password]%", "sms_to": "%sms_to%", "sms_body": "%sms_body%", "content_type": "%content_type%", "disposition_notification": "%disposition_notification%"}</genericSmsSendPostData>
+<genericSmsSendContentType>application/json</genericSmsSendContentType>
+<!-- Message Fetch Configuration -->
+<genericSmsFetchUrl>https://text.inluck.ca/api/fetch_messages</genericSmsFetchUrl>
+<genericSmsFetchPostData>{"username":"%account[username]%","password":"%account[password]%","last_id":"%last_known_sms_id%","device":"%installid%"}</genericSmsFetchPostData>
+<genericSmsFetchContentType>application/json</genericSmsFetchContentType>
+
+<genericSmsSendCustomHeaders>X-Auth-Token:{{token1}}</genericSmsSendCustomHeaders>
+<genericSmsFetchCustomHeaders>X-Auth-Token:{{token1}}</genericSmsFetchCustomHeaders>
+
+
+<pushTokenReporterUrl>https://text.inluck.ca/api/push_token</pushTokenReporterUrl>
+<pushTokenReporterPostData>{"username":"%account[username]%","password":"%account[password]%","selector":"%selector%","token_calls":"%pushTokenIncomingCall%","token_msgs":"%pushTokenOther%","appid_calls":"%pushappid_incoming_call%","appid_msgs":"%pushappid_other%"}</pushTokenReporterPostData>
+<pushTokenReporterContentType>application/json</pushTokenReporterContentType>
+
+{% else %}
+
+
+<!-- SMS Configuration -->
+<genericSmsSendUrl></genericSmsSendUrl>
+<genericSmsSendPostData>{"from":"%account[username]%","password":"%account[password]%","sms_to":"%sms_to%","sms_body":"%sms_body%"}</genericSmsSendPostData>
+
+<genericSmsSendContentType>application/json</genericSmsSendContentType>
+
+<!-- Message Fetch Configuration -->
+<genericSmsFetchUrl></genericSmsFetchUrl>
+<genericSmsFetchPostData>{"username":"%account[username]%","password":"%account[password]%","last_id":"%last_known_sms_id%","last_sent_id":"%last_known_sent_sms_id%","device":"%installid%"}</genericSmsFetchPostData>
+<genericSmsFetchContentType>application/json</genericSmsFetchContentType>
+
+<pushTokenReporterUrl></pushTokenReporterUrl>
+<pushTokenReporterPostData>{"username":"%account[username]%","selector":"%selector%","token_calls":"%pushTokenIncomingCall%","token_msgs":"%pushTokenOther%","appid_calls":"%pushappid_incoming_call%","appid_msgs":"%pushappid_other%"}</pushTokenReporterPostData>
+<pushTokenReporterContentType>application/json</pushTokenReporterContentType>
+
+
+{% endif %}
+
+</account>
+
+

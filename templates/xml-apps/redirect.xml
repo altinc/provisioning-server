@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xmlapp title="{{ title }}">
+  <view>
+    <section>
+      <select label="{{ sectionTitle }}" name=":dest" type="single">
+        {% if currentDest == 0 %}
+        <option text="Off" value="0" />
+        {% for option in ruleOptions %}
+        <option text="{{ option.name }}" value="{{ option.value }}" />
+        {% endfor %}
+        {% elif currentDest == 1 %}
+        <option text="{{ ruleOptions[0].name }}" value="1" />
+        {% if ruleOptions[1] %}<option text="{{ ruleOptions[1].name }}" value="2" />{% endif %}
+        {% if ruleOptions[2] %}<option text="{{ ruleOptions[2].name }}" value="3" />{% endif %}
+        <option text="Off" value="0" />
+        {% elif currentDest == 2 %}
+        <option text="{{ ruleOptions[1].name }}" value="2" />
+        {% if ruleOptions[0] %}<option text="{{ ruleOptions[0].name }}" value="1" />{% endif %}
+        {% if ruleOptions[2] %}<option text="{{ ruleOptions[2].name }}" value="3" />{% endif %}
+        <option text="Off" value="0" />
+        {% elif currentDest == 3 %}
+        <option text="{{ ruleOptions[2].name }}" value="3" />
+        {% if ruleOptions[0] %}<option text="{{ ruleOptions[0].name }}" value="1" />{% endif %}
+        {% if ruleOptions[1] %}<option text="{{ ruleOptions[1].name }}" value="2" />{% endif %}
+        <option text="Off" value="0" />
+        {% endif %}
+      </select>
+    </section>
+    <section>
+      <text label="The current configuration is shown above. To change the configuration, use the arrow keys and hit save." />
+    </section>
+  </view>
+  <SoftKeys>
+    <Softkey action="AppendInputURL" label="Save" commandArgs="{{ saveUrl }}?rule_ids={{ ruleIds }}" /> 
+    <Softkey action="QuitApp" label="Exit" /> 
+  </SoftKeys>
+  <Events>
+    <!-- ADD EVENT HERE -->
+  </Events>
+</xmlapp>

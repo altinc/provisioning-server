@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+     <!-- Include shared styles -->
+    {% include './shared-styles.html' %}
+
+</head>
+<body>
+    <!-- Include shared header and navigation -->
+    {% set current_page = 'logs' %}
+    {% set page_title = 'Log Viewer' %}
+    {% set page_description = 'Historical and Realtime access logs' %}
+    {% set page_icon = 'fas fa-tachometer-alt' %}
+    {% include './shared-header.html' %}
+
+    <main class="main">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Filter Logs</h2>
+            </div>
+            <div class="card-body">
+                <form method="GET">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Log File</label>
+                            <select name="file" class="form-control">
+                                <option value="combined" {% if filters.file == 'combined' %}selected{% endif %}>Combined Logs</option>
+                                <option value="error" {% if filters.file == 'error' %}selected{% endif %}>Error Logs</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Log Level</label>
+                            <select name="level" class="form-control">
+                                <option value="">All Levels</option>
+                                <option value="error" {% if filters.level == 'error' %}selected{% endif %}>Error</option>
+                                <option value="warn" {% if filters.level == 'warn' %}selected{% endif %}>Warning</option>
+                                <option value="info" {% if filters.level == 'info' %}selected{% endif %}>Info</option>
+                                <option value="debug" {% if filters.level == 'debug' %}selected{% endif %}>Debug</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Lines</label>
+                            <select name="lines" class="form-control">
+                                <option value="100" {% if filters.lines == '100' %}selected{% endif %}>100</option>
+                                <option value="500" {% if filters.lines == '500' %}selected{% endif %}>500</option>
+                                <option value="1000" {% if filters.lines == '1000' %}selected{% endif %}>1000</option>
+                                <option value="2000" {% if filters.lines == '2000' %}selected{% endif %}>2000</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Search</label>
+                            <input type="text" name="search" class="form-control" value="{% if filters.search %}{{ filters.search }}{% endif %}" placeholder="Search logs...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">MAC Address</label>
+                            <input type="text" name="mac" class="form-control" value="{% if filters.mac %}{{ filters.mac }}{% endif %}" placeholder="MAC address...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Since</label>
+                            <input type="datetime-local" name="since" class="form-control" value="{% if filters.since %}{{ filters.since }}{% endif %}">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="/admin/logs" class="btn btn-secondary">Clear Filters</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="card-title">Log Entries ({{ totalLogs }} total)</h2>
+                <button id="toggleStream" class="btn btn-secondary btn-sm">Start Live Stream</button>
+            </div>
+            <div class="card-body">
+                <div id="logContainer">
+                    {% if logs and logs | length > 0 %}
+                        {% for log in logs %}
+                        <div class="log-entry {{ log.level }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-xs text-muted">{{ log.timestamp }}</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if log.mac %}
+                                        <span class="text-xs font-mono">{{ log.mac }}</span>
+                                    {% endif %}
+                                    {% if log.ip %}
+                                        <span class="text-xs">{{ log.ip }}</span>
+                                    {% endif %}
+                                    <span class="status {% if log.level == 'info' %}status-success{% elif log.level == 'warn' %}status-warning{% elif log.level == 'error' %}status-danger{% else %}status-info{% endif %}">
+                                        {{ log.level | upper }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="mt-1">{{ log.message }}</div>
+                            {% if log.url %}
+                                <div class="text-xs text-muted mt-1">{% if log.method %}{{ log.method }}{% else %}GET{% endif %} {{ log.url }}</div>
+                            {% endif %}
+                            {% if log.statusCode %}
+                                <div class="text-xs text-muted">Status: {{ log.statusCode }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <div class="text-muted">No log entries found</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let streamEnabled = false;
+        let eventSource = null;
+
+        document.getElementById('toggleStream').addEventListener('click', function() {
+            if (!streamEnabled) {
+                startLogStream();
+                this.textContent = 'Stop Live Stream';
+                this.classList.add('btn-primary');
+                this.classList.remove('btn-secondary');
+                streamEnabled = true;
+            } else {
+                stopLogStream();
+                this.textContent = 'Start Live Stream';
+                this.classList.add('btn-secondary');
+                this.classList.remove('btn-primary');
+                streamEnabled = false;
+            }
+        });
+
+        function startLogStream() {
+            eventSource = new EventSource('/admin/logs/stream');
+            
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'logs' && data.logs) {
+                    prependLogs(data.logs);
+                }
+            };
+
+            eventSource.onerror = function() {
+                console.error('Log stream error');
+                stopLogStream();
+            };
+        }
+
+        function stopLogStream() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+        }
+
+        function prependLogs(logs) {
+            const container = document.getElementById('logContainer');
+            logs.forEach(log => {
+                const logElement = createLogElement(log);
+                container.insertBefore(logElement, container.firstChild);
+            });
+        }
+
+        function createLogElement(log) {
+            const div = document.createElement('div');
+            div.className = `log-entry ${log.level}`;
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-xs text-muted">${log.timestamp}</span>
+                    <span class="status status-${log.level === 'info' ? 'success' : log.level === 'warn' ? 'warning' : log.level === 'error' ? 'danger' : 'info'}">
+                        ${log.level.toUpperCase()}
+                    </span>
+                </div>
+                <div class="mt-1">${log.message}</div>
+            `;
+            return div;
+        }
+    </script>
+</body>
+</html>
