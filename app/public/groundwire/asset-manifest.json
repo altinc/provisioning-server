@@ -1,0 +1,12 @@
+{
+  "files": {
+    "main.js": "/groundwire/static/js/main.bf700384.js",
+    "static/media/apple_store.svg": "/groundwire/static/media/apple_store.c5ad9d547c1e81606052cab0e8058c2c.svg",
+    "static/media/google_store.svg": "/groundwire/static/media/google_store.cdbdb1bb306a864264ff31dc53affbe0.svg",
+    "index.html": "/groundwire/index.html",
+    "main.bf700384.js.map": "/groundwire/static/js/main.bf700384.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.bf700384.js"
+  ]
+}

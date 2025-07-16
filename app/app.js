@@ -15,6 +15,9 @@ const xmlAppsRoutes = require('./routes/xmlApps');
 const xmlAppsYealinkRoutes = require('./routes/xmlAppsYealink');
 const xmlProxyRoutes = require('./routes/xmlProxy');
 
+const gwProxyRoutes = require('./routes/gwProxy');
+
+
 const redisService = require('./services/redis');
 
 
@@ -391,6 +394,7 @@ app.use('/admin', adminRoutes); // admin web ui
 app.use('/xmlApps', xmlAppsRoutes); // xml apps
 app.use('/xmlAppsYealink', xmlAppsYealinkRoutes);
 app.use('/xml', xmlProxyRoutes);
+app.use('/groundwire', gwProxyRoutes);
 
 // Health check endpoint with enhanced IP debugging
 app.get('/health', (req, res) => {
