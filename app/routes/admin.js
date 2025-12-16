@@ -4,7 +4,7 @@ const path = require('path');
 const { param, query, validationResult } = require('express-validator');
 const router = express.Router();
 
-const { parseBasicAuth, validateBasicAuth, generateAuthToken } = require('../utils/auth');
+const auth = require('../utils/auth');
 const logger = require('../utils/logger');
 const redisService = require('../services/redis');
 const odooService = require('../services/odoo');
@@ -158,8 +158,8 @@ router.get('/login', (req, res) => {
 // Login handler
 router.post('/login', express.urlencoded({ extended: true }), (req, res) => {
   const { username, password } = req.body;
-  
-  if (validateBasicAuth(username, password)) {
+
+  if (auth.validateBasicAuth(username, password)) {
     // Set session
     req.session.authenticated = true;
     req.session.username = username;
@@ -547,9 +547,9 @@ router.post('/api/token/:mac', [
   try {
     const { mac } = req.params;
     const normalizedMac = mac.replace(/[:-]/g, '').toLowerCase();
-    
-    const tokens = generateAuthToken(normalizedMac);
-    
+
+    const tokens = auth.generateAuthToken(normalizedMac);
+
     const response = {
       mac: normalizedMac,
       tokens: tokens,
@@ -827,7 +827,7 @@ if (process.env.NODE_ENV === 'development') {
         mac: normalizedMac,
         found: !!deviceData,
         data: deviceData,
-        tokens: generateAuthToken(normalizedMac),
+        tokens: auth.generateAuthToken(normalizedMac),
         timestamp: new Date().toISOString()
       });
     } catch (error) {

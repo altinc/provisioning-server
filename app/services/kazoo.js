@@ -577,6 +577,4 @@ class KazooService {
   }
 }
 
-// Create and export a singleton instance
-const kazooService = new KazooService();
-module.exports = kazooService;
+module.exports = new KazooService();

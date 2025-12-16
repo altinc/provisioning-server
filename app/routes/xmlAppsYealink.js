@@ -9,7 +9,7 @@ const { param, query, validationResult } = require('express-validator');
 const router = express.Router();
 
 const xmlAppsYealinkController = require('../controllers/xmlAppsYealink');
-const { validateAuthToken } = require('../utils/auth');
+const auth = require('../utils/auth');
 const logger = require('../utils/logger');
 
 // Validation middleware
@@ -55,8 +55,8 @@ const authenticateXmlApp = (req, res, next) => {
       });
       return res.status(403).send('Authentication token required');
     }
-    
-    const isValidToken = validateAuthToken(normalizedMac, token);
+
+    const isValidToken = auth.validateAuthToken(normalizedMac, token);
     if (!isValidToken) {
       logger.warn('Invalid token for Yealink XML App access', {
         ip: req.ip,
