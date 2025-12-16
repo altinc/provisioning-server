@@ -124,15 +124,24 @@ function parseLogEntry(line) {
 async function getDeviceHistory(mac) {
   try {
     const logs = await readLogFile('combined.log', 5000);
+    const macLower = mac.toLowerCase(); // Ensure lowercase for comparison
+
     const deviceLogs = logs
       .map(parseLogEntry)
-      .filter(entry =>
-        entry.mac === mac ||
-        (entry.message && entry.message.includes(mac)) ||
-        (entry.url && entry.url.includes(mac))
-      )
+      .filter(entry => {
+        // Check extracted MAC field (already lowercase from parseLogEntry)
+        if (entry.mac === macLower) return true;
+
+        // Check if MAC appears in message (case-insensitive)
+        if (entry.message && entry.message.toLowerCase().includes(macLower)) return true;
+
+        // Check if MAC appears in URL (case-insensitive)
+        if (entry.url && entry.url.toLowerCase().includes(macLower)) return true;
+
+        return false;
+      })
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 50); // Reduced from 100 to 50 for better performance
+      .slice(0, 50);
 
     return deviceLogs;
   } catch (error) {
