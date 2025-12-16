@@ -207,91 +207,137 @@ class OdooService {
    */
   async getDeviceDataLight(mac) {
     const cacheKey = `device:light:${mac}`;
-    
+    const FRESH_THRESHOLD = 60 * 60 * 1000; // 1 hour in milliseconds
+
     try {
       // Try cache first
       const cached = await redisService.get(cacheKey);
       if (cached) {
-        logger.debug(`Cache hit for device light data: ${mac}`);
-        return JSON.parse(cached);
+        const cacheData = JSON.parse(cached);
+        const cacheAge = Date.now() - (cacheData.cachedAt || 0);
+
+        // If cache is fresh (< 1 hour old), return it immediately
+        if (cacheAge < FRESH_THRESHOLD) {
+          logger.debug(`Cache hit for device light data: ${mac} (${Math.round(cacheAge / 1000)}s old)`);
+          return cacheData.data;
+        }
+
+        // Cache is stale (> 1 hour old), try to refresh from Odoo
+        logger.debug(`Cache stale for device light data: ${mac} (${Math.round(cacheAge / 1000)}s old), attempting refresh`);
+        try {
+          const freshData = await this.fetchDeviceDataLight(mac);
+          // Successfully refreshed, cache it
+          await redisService.setex(cacheKey, 7 * 24 * 60 * 60, JSON.stringify({
+            data: freshData,
+            cachedAt: Date.now()
+          }));
+          logger.debug(`Refreshed and cached light device data for ${mac}`);
+          return freshData;
+        } catch (error) {
+          // Odoo refresh failed, return stale cache
+          logger.warn(`Odoo unavailable for refresh, returning stale cache for light device data: ${mac}`, {
+            age: Math.round(cacheAge / 1000) + 's',
+            error: error.message
+          });
+          return cacheData.data;
+        }
       }
 
       logger.debug(`Cache miss for device light data: ${mac}, querying Odoo`);
 
-      // Query device from Odoo
-      const deviceIds = await this.executeMethod(
-        'kazoo_mgmt.devices',
-        'search',
-        [[['x_unique', 'ilike', mac]]]
-      );
+      // Fetch fresh data from Odoo
+      const result = await this.fetchDeviceDataLight(mac);
 
-      if (!deviceIds || deviceIds.length === 0) {
-        return null;
-      }
+      // Cache for 7 days with timestamp
+      await redisService.setex(cacheKey, 7 * 24 * 60 * 60, JSON.stringify({
+        data: result,
+        cachedAt: Date.now()
+      }));
 
-      // Get only essential device data
-      const deviceData = await this.executeMethod(
-        'kazoo_mgmt.devices',
-        'read',
-        [deviceIds, ['x_unique', 'x_partners']]
-      );
-
-      if (!deviceData || deviceData.length === 0) {
-        return null;
-      }
-
-      const device = deviceData[0];
-      
-      // Initialize result with device ID
-      let result = {
-        device: { id: device.id },
-        kazooData: null
-      };
-      
-      // Get only the first partner's organization data for Kazoo info
-      if (device.x_partners && device.x_partners.length > 0) {
-        const partnerData = await this.executeMethod(
-          'res.partner',
-          'read',
-          [[device.x_partners[0]], ['commercial_partner_id', 'x_kazoo_enabled']]
-        );
-        
-        if (partnerData && partnerData[0] && partnerData[0].commercial_partner_id) {
-          const orgData = await this.executeMethod(
-            'res.partner',
-            'read',
-            [[partnerData[0].commercial_partner_id[0]], ['x_kazoo_id', 'x_kazoo_enabled']]
-          );
-          
-          if (orgData && orgData[0] && orgData[0].x_kazoo_id) {
-            result.kazooData = {
-              account_id: orgData[0].x_kazoo_id
-            };
-          }
-        }
-      }
-      
-      // Cache for 1 hour
-      await redisService.setex(cacheKey, 3600, JSON.stringify(result));
-      
       logger.debug(`Cached light device data for ${mac}`);
       return result;
     } catch (error) {
       logger.error(`Error getting light device data for ${mac}:`, error);
-      
-      // Try to return cached data if Odoo is down
+
+      // Try to return cached data if Odoo is down (last resort for cache misses)
       try {
         const cached = await redisService.get(cacheKey);
         if (cached) {
-          logger.warn(`Odoo unavailable, returning stale cache for light device data: ${mac}`);
-          return JSON.parse(cached);
+          const cacheData = JSON.parse(cached);
+          const cacheAge = Date.now() - (cacheData.cachedAt || 0);
+          logger.warn(`Odoo unavailable, returning stale cache for light device data: ${mac}`, {
+            age: Math.round(cacheAge / 1000) + 's'
+          });
+          return cacheData.data;
         }
       } catch (cacheError) {
         logger.error('Cache also unavailable:', cacheError);
       }
-      
+
       throw error;
     }
+  }
+
+  /**
+   * Fetch lightweight device data from Odoo (extracted for reusability)
+   * @param {string} mac - The device MAC address
+   * @returns {Object} Minimal device data
+   */
+  async fetchDeviceDataLight(mac) {
+    // Query device from Odoo
+    const deviceIds = await this.executeMethod(
+      'kazoo_mgmt.devices',
+      'search',
+      [[['x_unique', 'ilike', mac]]]
+    );
+
+    if (!deviceIds || deviceIds.length === 0) {
+      return null;
+    }
+
+    // Get only essential device data
+    const deviceData = await this.executeMethod(
+      'kazoo_mgmt.devices',
+      'read',
+      [deviceIds, ['x_unique', 'x_partners']]
+    );
+
+    if (!deviceData || deviceData.length === 0) {
+      return null;
+    }
+
+    const device = deviceData[0];
+
+    // Initialize result with device ID
+    let result = {
+      device: { id: device.id },
+      kazooData: null
+    };
+
+    // Get only the first partner's organization data for Kazoo info
+    if (device.x_partners && device.x_partners.length > 0) {
+      const partnerData = await this.executeMethod(
+        'res.partner',
+        'read',
+        [[device.x_partners[0]], ['commercial_partner_id', 'x_kazoo_enabled']]
+      );
+
+      if (partnerData && partnerData[0] && partnerData[0].commercial_partner_id) {
+        const orgData = await this.executeMethod(
+          'res.partner',
+          'read',
+          [[partnerData[0].commercial_partner_id[0]], ['x_kazoo_id', 'x_kazoo_enabled']]
+        );
+
+        if (orgData && orgData[0] && orgData[0].x_kazoo_id) {
+          result.kazooData = {
+            account_id: orgData[0].x_kazoo_id
+          };
+        }
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -301,166 +347,211 @@ class OdooService {
    */
   async getDeviceData(mac) {
     const cacheKey = `device:${mac}`;
-    
+    const FRESH_THRESHOLD = 60 * 60 * 1000; // 1 hour in milliseconds
+
     try {
       // Try cache first
       const cached = await redisService.get(cacheKey);
       if (cached) {
-        logger.debug(`Cache hit for device: ${mac}`);
-        return JSON.parse(cached);
+        const cacheData = JSON.parse(cached);
+        const cacheAge = Date.now() - (cacheData.cachedAt || 0);
+
+        // If cache is fresh (< 1 hour old), return it immediately
+        if (cacheAge < FRESH_THRESHOLD) {
+          logger.debug(`Cache hit for device: ${mac} (${Math.round(cacheAge / 1000)}s old)`);
+          return cacheData.data;
+        }
+
+        // Cache is stale (> 1 hour old), try to refresh from Odoo
+        logger.debug(`Cache stale for device: ${mac} (${Math.round(cacheAge / 1000)}s old), attempting refresh`);
+        try {
+          const freshData = await this.fetchDeviceData(mac);
+          // Successfully refreshed, cache it
+          await redisService.setex(cacheKey, 7 * 24 * 60 * 60, JSON.stringify({
+            data: freshData,
+            cachedAt: Date.now()
+          }));
+          logger.debug(`Refreshed and cached device data for ${mac}`);
+          return freshData;
+        } catch (error) {
+          // Odoo refresh failed, return stale cache
+          logger.warn(`Odoo unavailable for refresh, returning stale cache for device: ${mac}`, {
+            age: Math.round(cacheAge / 1000) + 's',
+            error: error.message
+          });
+          return cacheData.data;
+        }
       }
 
       logger.debug(`Cache miss for device: ${mac}, querying Odoo`);
 
-      // Query device from Odoo
-      const deviceIds = await this.executeMethod(
-        'kazoo_mgmt.devices',
-        'search',
-        [[['x_unique', 'ilike', mac]]]
-      );
+      // Fetch fresh data from Odoo
+      const result = await this.fetchDeviceData(mac);
 
-      if (!deviceIds || deviceIds.length === 0) {
-        return null;
-      }
+      // Cache for 7 days with timestamp
+      await redisService.setex(cacheKey, 7 * 24 * 60 * 60, JSON.stringify({
+        data: result,
+        cachedAt: Date.now()
+      }));
 
-      const deviceFields = [
-        'x_unique', 'x_vlan', 'x_headset', 'x_model', 
-        'x_partners', 'x_owner', 'x_site', 'x_last_prov', 'x_call_waiting'
-      ];
-
-      const deviceData = await this.executeMethod(
-        'kazoo_mgmt.devices',
-        'read',
-        [deviceIds, deviceFields]
-      );
-
-      if (!deviceData || deviceData.length === 0) {
-        return null;
-      }
-
-      const device = deviceData[0];
-
-      // Get site data
-      let siteData = null;
-      if (device.x_site && device.x_site[0]) {
-        const siteFields = ['x_gtz', 'x_city', 'x_co', 'x_tz'];
-        const sites = await this.executeMethod(
-          'kazoo_mgmt.sites',
-          'read',
-          [[device.x_site[0]], siteFields]
-        );
-        siteData = sites[0] || null;
-      }
-
-      // Get partner data
-      let partnersData = [];
-      if (device.x_partners && device.x_partners.length > 0) {
-        const partnerFields = [
-          'firstname', 'x_voip_ext', 'x_voip_user', 'x_voip_secret',
-          'x_mobile_user', 'x_mobile_secret', 'commercial_partner_id',
-          'x_kazoo_enabled', 'x_device', 'x_kazoo_uid', 'email'
-        ];
-        
-        const partners = await this.executeMethod(
-          'res.partner',
-          'read',
-          [device.x_partners.sort(), partnerFields]
-        );
-        
-        // Sort by extension
-        partnersData = partners.sort((a, b) => 
-          (a.x_voip_ext || 0) - (b.x_voip_ext || 0)
-        );
-        
-        // For each partner with x_kazoo_uid, get the kazoo object
-        for (const partner of partnersData) {
-          if (partner.x_kazoo_uid && Array.isArray(partner.x_kazoo_uid) && partner.x_kazoo_uid[0]) {
-            try {
-              const kazooObjId = partner.x_kazoo_uid[0];
-              
-              logger.info(`Expanding x_kazoo_uid ${kazooObjId} for ${mac}`);
-              
-              // Get the kazoo object record
-              const kazooObjFields = ['x_kid', 'x_type', 'x_name'];
-              const kazooObjs = await this.executeMethod(
-                'kazoo_mgmt.objects',
-                'read',
-                [[kazooObjId], kazooObjFields]
-              );
-              
-              if (kazooObjs && kazooObjs.length > 0) {
-                const kazooObj = kazooObjs[0];
-                
-                // Add the actual Kazoo ID to the partner data
-                partner.x_kazoo_kid = kazooObj.x_kid;
-                
-                logger.info(`Found Kazoo user ID ${kazooObj.x_kid} for ${mac}`, {
-                  objectName: kazooObj.x_name,
-                  objectType: kazooObj.x_type
-                });
-              } else {
-                logger.warn(`Kazoo object not found for ID: ${kazooObjId}`);
-              }
-            } catch (error) {
-              logger.error(`Failed to get Kazoo object data: ${error.message}`, {
-                mac,
-                partnerId: partner.id,
-                kazooUid: partner.x_kazoo_uid
-              });
-            }
-          }
-        }
-      }
-
-      // Get organization data for each partner
-      const organizationsData = [];
-      for (const partner of partnersData) {
-        if (partner.commercial_partner_id && partner.commercial_partner_id[0]) {
-          const orgFields = [
-            'name', 'ref', 'x_kazoo_realm', 'x_pbxip', 
-            'x_kazoo_enabled', 'x_legacy', 'x_kazoo_id'
-          ];
-          
-          const orgs = await this.executeMethod(
-            'res.partner',
-            'read',
-            [[partner.commercial_partner_id[0]], orgFields]
-          );
-          
-          organizationsData.push(orgs[0] || null);
-        } else {
-          organizationsData.push(null);
-        }
-      }
-
-      const result = {
-        id: device.id,
-        device,
-        site: siteData,
-        partners: partnersData,
-        organizations: organizationsData
-      };
-
-      // Cache the result
-      await redisService.setex(cacheKey, this.cacheTimeout, JSON.stringify(result));
-      
+      logger.debug(`Cached device data for ${mac}`);
       return result;
     } catch (error) {
       logger.error(`Error getting device data for ${mac}:`, error);
-      
-      // Try to return cached data if Odoo is down
+
+      // Try to return cached data if Odoo is down (last resort for cache misses)
       try {
         const cached = await redisService.get(cacheKey);
         if (cached) {
-          logger.warn(`Odoo unavailable, returning stale cache for device: ${mac}`);
-          return JSON.parse(cached);
+          const cacheData = JSON.parse(cached);
+          const cacheAge = Date.now() - (cacheData.cachedAt || 0);
+          logger.warn(`Odoo unavailable, returning stale cache for device: ${mac}`, {
+            age: Math.round(cacheAge / 1000) + 's'
+          });
+          return cacheData.data;
         }
       } catch (cacheError) {
         logger.error('Cache also unavailable:', cacheError);
       }
-      
+
       throw error;
     }
+  }
+
+  /**
+   * Fetch full device data from Odoo (extracted for reusability)
+   * @param {string} mac - The device MAC address
+   * @returns {Object} Complete device data
+   */
+  async fetchDeviceData(mac) {
+    // Query device from Odoo
+    const deviceIds = await this.executeMethod(
+      'kazoo_mgmt.devices',
+      'search',
+      [[['x_unique', 'ilike', mac]]]
+    );
+
+    if (!deviceIds || deviceIds.length === 0) {
+      return null;
+    }
+
+    const deviceFields = [
+      'x_unique', 'x_vlan', 'x_headset', 'x_model',
+      'x_partners', 'x_owner', 'x_site', 'x_last_prov', 'x_call_waiting'
+    ];
+
+    const deviceData = await this.executeMethod(
+      'kazoo_mgmt.devices',
+      'read',
+      [deviceIds, deviceFields]
+    );
+
+    if (!deviceData || deviceData.length === 0) {
+      return null;
+    }
+
+    const device = deviceData[0];
+
+    // Get site data
+    let siteData = null;
+    if (device.x_site && device.x_site[0]) {
+      const siteFields = ['x_gtz', 'x_city', 'x_co', 'x_tz'];
+      const sites = await this.executeMethod(
+        'kazoo_mgmt.sites',
+        'read',
+        [[device.x_site[0]], siteFields]
+      );
+      siteData = sites[0] || null;
+    }
+
+    // Get partner data
+    let partnersData = [];
+    if (device.x_partners && device.x_partners.length > 0) {
+      const partnerFields = [
+        'firstname', 'x_voip_ext', 'x_voip_user', 'x_voip_secret',
+        'x_mobile_user', 'x_mobile_secret', 'commercial_partner_id',
+        'x_kazoo_enabled', 'x_device', 'x_kazoo_uid', 'email'
+      ];
+
+      const partners = await this.executeMethod(
+        'res.partner',
+        'read',
+        [device.x_partners.sort(), partnerFields]
+      );
+
+      // Sort by extension
+      partnersData = partners.sort((a, b) =>
+        (a.x_voip_ext || 0) - (b.x_voip_ext || 0)
+      );
+
+      // For each partner with x_kazoo_uid, get the kazoo object
+      for (const partner of partnersData) {
+        if (partner.x_kazoo_uid && Array.isArray(partner.x_kazoo_uid) && partner.x_kazoo_uid[0]) {
+          try {
+            const kazooObjId = partner.x_kazoo_uid[0];
+
+            logger.info(`Expanding x_kazoo_uid ${kazooObjId} for ${device.x_unique}`);
+
+            // Get the kazoo object record
+            const kazooObjFields = ['x_kid', 'x_type', 'x_name'];
+            const kazooObjs = await this.executeMethod(
+              'kazoo_mgmt.objects',
+              'read',
+              [[kazooObjId], kazooObjFields]
+            );
+
+            if (kazooObjs && kazooObjs.length > 0) {
+              const kazooObj = kazooObjs[0];
+
+              // Add the actual Kazoo ID to the partner data
+              partner.x_kazoo_kid = kazooObj.x_kid;
+
+              logger.info(`Found Kazoo user ID ${kazooObj.x_kid} for ${device.x_unique}`, {
+                objectName: kazooObj.x_name,
+                objectType: kazooObj.x_type
+              });
+            } else {
+              logger.warn(`Kazoo object not found for ID: ${kazooObjId}`);
+            }
+          } catch (error) {
+            logger.error(`Failed to get Kazoo object data: ${error.message}`, {
+              mac: device.x_unique,
+              partnerId: partner.id,
+              kazooUid: partner.x_kazoo_uid
+            });
+          }
+        }
+      }
+    }
+
+    // Get organization data for each partner
+    const organizationsData = [];
+    for (const partner of partnersData) {
+      if (partner.commercial_partner_id && partner.commercial_partner_id[0]) {
+        const orgFields = [
+          'name', 'ref', 'x_kazoo_realm', 'x_pbxip',
+          'x_kazoo_enabled', 'x_legacy', 'x_kazoo_id'
+        ];
+
+        const orgs = await this.executeMethod(
+          'res.partner',
+          'read',
+          [[partner.commercial_partner_id[0]], orgFields]
+        );
+
+        organizationsData.push(orgs[0] || null);
+      } else {
+        organizationsData.push(null);
+      }
+    }
+
+    return {
+      id: device.id,
+      device,
+      site: siteData,
+      partners: partnersData,
+      organizations: organizationsData
+    };
   }
 
   async updateLastProvision(deviceId) {
