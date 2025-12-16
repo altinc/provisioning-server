@@ -47,24 +47,26 @@ const transports = [
   })
 ];
 
-// Add file transport in production
-if (process.env.NODE_ENV === 'production') {
-  transports.push(
-    new winston.transports.File({
-      filename: 'logs/error.log',
-      level: 'error',
-      format: fileFormat,
-      maxsize: 5242880, // 5MB
-      maxFiles: 5
-    }),
-    new winston.transports.File({
-      filename: 'logs/combined.log',
-      format: fileFormat,
-      maxsize: 5242880, // 5MB
-      maxFiles: 5
-    })
-  );
-}
+// Add file transport with rotation in all environments (adjust sizes for dev vs prod)
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const maxLogSize = isDevelopment ? 2097152 : 10485760; // 2MB dev, 10MB prod
+const maxLogFiles = isDevelopment ? 3 : 10; // Keep fewer files in dev
+
+transports.push(
+  new winston.transports.File({
+    filename: 'logs/error.log',
+    level: 'error',
+    format: fileFormat,
+    maxsize: maxLogSize,
+    maxFiles: maxLogFiles
+  }),
+  new winston.transports.File({
+    filename: 'logs/combined.log',
+    format: fileFormat,
+    maxsize: maxLogSize,
+    maxFiles: maxLogFiles
+  })
+);
 
 // Create logger instance
 const logger = winston.createLogger({
