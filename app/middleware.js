@@ -434,11 +434,11 @@ const detectDeviceType = (req, res, next) => {
     templateFile = 'algo-8301.cfg';
   } else if (userAgent.includes('PolycomVVX') || userAgent.includes('Polycom')) {
     deviceType = 'polycom_vvx';
-    templateFile = 'vvx.cfg'; // You'll need to create this template
+    templateFile = './vvx/main.cfg'; // You'll need to create this template
       } else if (req.originalMacParam && req.originalMacParam.match(/^(?:4825|6416|0004f)/i)) {
     // MAC prefix detection for Polycom phones when no User-Agent
     deviceType = 'polycom_vvx';
-    templateFile = 'vvx.cfg';
+    templateFile = './vvx/main.cfg';
   } else if (userAgent.includes('Mozilla')) {
     // Browser access - default to GXP template for testing
     deviceType = 'browser';

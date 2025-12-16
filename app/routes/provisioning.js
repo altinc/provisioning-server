@@ -122,7 +122,7 @@ prefixes.forEach(prefix => {
   router.get(`${prefix}/:token?/:mac:configType(reg|sip|softkey).cfg`, ...provisioningMiddleware, provisioningController.renderPolycomConfig);
   
   // Algo pager
-  router.get(`${prefix}/:token?/:mac.conf`, ...provisioningMiddleware, provisioningController.renderAlgoConfig);
+  router.get(`${prefix}/:token?/algom:mac.conf`, ...provisioningMiddleware, provisioningController.renderAlgoConfig);
   
   // Snom
   router.get(`${prefix}/:token?/:mac.snom`, ...provisioningMiddleware, provisioningController.renderSnomConfig);

@@ -102,7 +102,7 @@ function processDeviceData(deviceData, mac, userAgent, isGroundwire = false) {
     http_auth_password: httpAuthPassword,
     // New provisioning URLs with token and MAC
     provisioning_url: mac ? `${serverAddr}/v3/${token}` : '',
-    apps_button_url_grandstream: mac ? `${serverAddr}/xmlApps/menu/${token}/${mac.toUpperCase()}` : '',
+    apps_button_url_grandstream: mac ? `https://${serverAddr}/xmlApps/menu/${token}/${mac.toUpperCase()}` : '',
     apps_button_url_yealink: mac ? `${serverAddr}/xmlAppsYealink/menu/${token}/${mac.toUpperCase()}` : '',
     // NEW: Firmware URL
     firmware_url: `${serverAddr}/fw`,
@@ -204,7 +204,7 @@ function processDeviceData(deviceData, mac, userAgent, isGroundwire = false) {
 
       // Determine username based on Kazoo vs legacy
       if (srvToggle === '0' || !partner.x_kazoo_enabled || !org.x_kazoo_enabled) {
-        templateVars[`username${accountNum}`] = partner.x_voip_ext || '';
+        templateVars[`username${accountNum}`] = partner.x_voip_user || '';
       } else {
         // For Groundwire, use mobile credentials if available
         if (isGroundwire && partner.x_mobile_user) {

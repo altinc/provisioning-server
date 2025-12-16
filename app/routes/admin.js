@@ -486,6 +486,7 @@ router.get('/devices/:mac', [
       title: `Device Details - ${mac}`,
       mac: mac, // Display original case
       deviceData,
+      deviceStats,
       history: history.slice(0, 50), // Show last 50 entries
       stats
     });

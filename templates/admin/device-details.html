@@ -16,7 +16,6 @@
     {% set page_icon = 'fas fa-tachometer-alt' %}
     {% include './shared-header.html' %}
 
-
     <main class="main">
         <!-- Device Stats -->
         <div class="stats-grid">
@@ -65,10 +64,25 @@
                             <dt>VLAN:</dt>
                             <dd>{{ deviceData.device.x_vlan }}</dd>
                             {% endif %}
+
+                            {% if deviceData.device.x_headset %}
+                            <dt>Headset:</dt>
+                            <dd>{{ deviceData.device.x_headset }}</dd>
+                            {% endif %}
+
+                            {% if deviceData.device.x_call_waiting %}
+                            <dt>Call Waiting:</dt>
+                            <dd>{{ deviceData.device.x_call_waiting }}</dd>
+                            {% endif %}
                             
                             {% if deviceData.device.x_last_prov %}
                             <dt>Last Provision:</dt>
                             <dd>{{ deviceData.device.x_last_prov | formatTimestamp }}</dd>
+                            {% endif %}
+                            
+                            {% if stats.firstSeen %}
+                            <dt>First Seen:</dt>
+                            <dd>{{ stats.firstSeen | formatTimestamp }}</dd>
                             {% endif %}
                             
                             {% if deviceData.site %}
@@ -81,6 +95,16 @@
                                 <dt>Timezone:</dt>
                                 <dd>{{ deviceData.site.x_tz }}</dd>
                                 {% endif %}
+
+                                {% if deviceData.site.x_gtz %}
+                                <dt>GMT Offset:</dt>
+                                <dd>{{ deviceData.site.x_gtz }}</dd>
+                                {% endif %}
+
+                                {% if deviceData.site.x_co and deviceData.site.x_co[1] %}
+                                <dt>Country:</dt>
+                                <dd>{{ deviceData.site.x_co[1] }}</dd>
+                                {% endif %}
                             {% endif %}
                         </dl>
                     {% else %}
@@ -89,6 +113,55 @@
                 </div>
             </div>
 
+            <!-- Network Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Network Information</h2>
+                </div>
+                <div class="card-body">
+                    {% if deviceStats %}
+                        <dl>
+                            {% if deviceStats.lastIP %}
+                            <dt>Last IP Address:</dt>
+                            <dd class="font-mono">{{ deviceStats.lastIP }}</dd>
+                            {% endif %}
+
+                            {% if deviceStats.lastUserAgent %}
+                            <dt>Last User Agent:</dt>
+                            <dd class="text-sm">{{ deviceStats.lastUserAgent }}</dd>
+                            {% endif %}
+
+                            {% if deviceStats.lastSeen %}
+                            <dt>Last Contact:</dt>
+                            <dd>{{ deviceStats.lastSeen | formatTimestamp }}</dd>
+                            {% endif %}
+                        </dl>
+                    {% else %}
+                        <div class="text-muted">No network information available</div>
+                    {% endif %}
+
+                    {% if history and history | length > 0 %}
+                        {% set latestEntry = history[0] %}
+                        {% if latestEntry.ip or latestEntry.userAgent %}
+                        <hr style="margin: 1rem 0;">
+                        <div class="text-sm text-muted">From latest log entry:</div>
+                        <dl class="text-sm">
+                            {% if latestEntry.ip %}
+                            <dt>Request IP:</dt>
+                            <dd class="font-mono">{{ latestEntry.ip }}</dd>
+                            {% endif %}
+                            {% if latestEntry.userAgent %}
+                            <dt>User Agent:</dt>
+                            <dd>{{ latestEntry.userAgent }}</dd>
+                            {% endif %}
+                        </dl>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
             <!-- Associated Users -->
             <div class="card">
                 <div class="card-header">
@@ -107,13 +180,70 @@
                                 {% endif %}
                             </div>
                             <div class="text-sm text-muted">
-                                Extension: {{ partner.x_voip_ext or 'None' }}<br>
-                                Username: {{ partner.x_voip_user or 'None' }}
+                                {% if partner.x_voip_ext %}
+                                Extension: {{ partner.x_voip_ext }}<br>
+                                {% endif %}
+                                {% if partner.x_voip_user %}
+                                Username: {{ partner.x_voip_user }}<br>
+                                {% endif %}
+                                {% if partner.email %}
+                                Email: {{ partner.email }}<br>
+                                {% endif %}
+                                {% if partner.x_kazoo_kid %}
+                                Kazoo User ID: {{ partner.x_kazoo_kid }}<br>
+                                {% endif %}
+                                {% if partner.x_mobile_user %}
+                                Mobile Username: {{ partner.x_mobile_user }}<br>
+                                {% endif %}
                             </div>
                         </div>
                         {% endfor %}
                     {% else %}
                         <div class="text-muted">No associated users</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Organizations -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Organizations</h2>
+                </div>
+                <div class="card-body">
+                    {% if deviceData and deviceData.organizations and deviceData.organizations | length > 0 %}
+                        {% for org in deviceData.organizations %}
+                        {% if org %}
+                        <div class="mb-4 p-3" style="border: 1px solid #e2e8f0; border-radius: 6px;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>{{ org.name or 'Unnamed Organization' }}</strong>
+                                {% if org.x_kazoo_enabled %}
+                                    <span class="status status-success">Kazoo</span>
+                                {% else %}
+                                    <span class="status status-info">Legacy PBX</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-sm text-muted">
+                                {% if org.ref %}
+                                Reference: {{ org.ref }}<br>
+                                {% endif %}
+                                {% if org.x_kazoo_realm %}
+                                Kazoo Realm: {{ org.x_kazoo_realm }}<br>
+                                {% endif %}
+                                {% if org.x_pbxip %}
+                                PBX IP: {{ org.x_pbxip }}<br>
+                                {% endif %}
+                                {% if org.x_kazoo_id %}
+                                Kazoo Account ID: {{ org.x_kazoo_id }}<br>
+                                {% endif %}
+                                {% if org.x_legacy %}
+                                Legacy ID: {{ org.x_legacy }}<br>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-muted">No organization information</div>
                     {% endif %}
                 </div>
             </div>
@@ -131,6 +261,9 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="text-xs text-muted">{{ entry.timestamp }}</span>
                             <div class="d-flex align-items-center gap-2">
+                                {% if entry.duration %}
+                                    <span class="text-xs">{{ entry.duration }}</span>
+                                {% endif %}
                                 {% if entry.statusCode %}
                                     <span class="text-xs">{{ entry.statusCode }}</span>
                                 {% endif %}
@@ -140,8 +273,18 @@
                             </div>
                         </div>
                         <div class="mt-1">{{ entry.message }}</div>
-                        {% if entry.url %}
-                            <div class="text-xs text-muted mt-1">{% if entry.method %}{{ entry.method }}{% else %}GET{% endif %} {{ entry.url }}</div>
+                        {% if entry.url or entry.method %}
+                            <div class="text-xs text-muted mt-1">
+                                {% if entry.method %}{{ entry.method }}{% else %}GET{% endif %}
+                                {% if entry.url %} {{ entry.url }}{% endif %}
+                            </div>
+                        {% endif %}
+                        {% if entry.ip or entry.userAgent %}
+                            <div class="text-xs text-muted mt-1">
+                                {% if entry.ip %}IP: {{ entry.ip }}{% endif %}
+                                {% if entry.ip and entry.userAgent %} • {% endif %}
+                                {% if entry.userAgent %}UA: {{ entry.userAgent | truncate(50) }}{% endif %}
+                            </div>
                         {% endif %}
                     </div>
                     {% endfor %}
