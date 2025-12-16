@@ -126,14 +126,14 @@ async function getDeviceHistory(mac) {
     const logs = await readLogFile('combined.log', 5000);
     const deviceLogs = logs
       .map(parseLogEntry)
-      .filter(entry => 
-        entry.mac === mac || 
+      .filter(entry =>
+        entry.mac === mac ||
         (entry.message && entry.message.includes(mac)) ||
         (entry.url && entry.url.includes(mac))
       )
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 100);
-    
+      .slice(0, 50); // Reduced from 100 to 50 for better performance
+
     return deviceLogs;
   } catch (error) {
     logger.error('Error getting device history:', error);
