@@ -100,57 +100,103 @@ class OdooService {
     }
   }
 
+  /**
+   * Retry wrapper with exponential backoff for transient failures
+   * @param {Function} fn - The async function to retry
+   * @param {string} context - Description of the operation for logging
+   * @param {number} maxAttempts - Maximum number of retry attempts
+   * @param {number} baseDelay - Base delay in milliseconds (doubles each retry)
+   */
+  async retryWithBackoff(fn, context = 'operation', maxAttempts = 3, baseDelay = 100) {
+    let lastError;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+
+        // Check if error is retryable (network errors, timeouts)
+        const isRetryable = error.code === 'ECONNREFUSED' ||
+                            error.code === 'ETIMEDOUT' ||
+                            error.code === 'ECONNRESET' ||
+                            error.code === 'ENOTFOUND' ||
+                            error.code === 'EPIPE' ||
+                            error.message?.includes('timeout') ||
+                            error.message?.includes('ECONNREFUSED');
+
+        if (!isRetryable || attempt === maxAttempts) {
+          logger.error(`${context} failed after ${attempt} attempt(s):`, error);
+          throw error;
+        }
+
+        const delay = baseDelay * Math.pow(2, attempt - 1);
+        logger.warn(`${context} failed (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms...`, {
+          error: error.message,
+          code: error.code
+        });
+
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    throw lastError;
+  }
+
   async authenticate() {
     if (this.uid) return this.uid;
 
-    const client = await this.getCommonClient();
-    
-    try {
-      const uid = await new Promise((resolve, reject) => {
-        client.methodCall('login', [
-          this.config.database,
-          this.config.username,
-          this.config.password
-        ], (err, value) => {
-          if (err) reject(err);
-          else resolve(value);
-        });
-      });
+    return this.retryWithBackoff(async () => {
+      const client = await this.getCommonClient();
 
-      this.uid = uid;
-      logger.info('Authenticated with Odoo', { uid });
-      return uid;
-    } catch (error) {
-      logger.error('Odoo authentication failed:', error);
-      throw new Error('Failed to authenticate with Odoo');
-    } finally {
-      this.releaseCommonClient(client);
-    }
+      try {
+        const uid = await new Promise((resolve, reject) => {
+          client.methodCall('login', [
+            this.config.database,
+            this.config.username,
+            this.config.password
+          ], (err, value) => {
+            if (err) reject(err);
+            else resolve(value);
+          });
+        });
+
+        this.uid = uid;
+        logger.info('Authenticated with Odoo', { uid });
+        return uid;
+      } catch (error) {
+        throw new Error(`Failed to authenticate with Odoo: ${error.message}`);
+      } finally {
+        this.releaseCommonClient(client);
+      }
+    }, 'Odoo authentication');
   }
 
   async executeMethod(model, method, args = [], fields = []) {
     await this.authenticate();
 
-    const client = await this.getObjectClient();
-    
-    try {
-      return new Promise((resolve, reject) => {
-        client.methodCall('execute', [
-          this.config.database,
-          this.uid,
-          this.config.password,
-          model,
-          method,
-          ...args,
-          ...(fields.length > 0 ? [fields] : [])
-        ], (err, value) => {
-          if (err) reject(err);
-          else resolve(value);
+    return this.retryWithBackoff(async () => {
+      const client = await this.getObjectClient();
+
+      try {
+        return new Promise((resolve, reject) => {
+          client.methodCall('execute', [
+            this.config.database,
+            this.uid,
+            this.config.password,
+            model,
+            method,
+            ...args,
+            ...(fields.length > 0 ? [fields] : [])
+          ], (err, value) => {
+            if (err) reject(err);
+            else resolve(value);
+          });
         });
-      });
-    } finally {
-      this.releaseObjectClient(client);
-    }
+      } finally {
+        this.releaseObjectClient(client);
+      }
+    }, `Odoo ${model}.${method}`);
   }
 
   /**
