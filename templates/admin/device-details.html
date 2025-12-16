@@ -251,8 +251,9 @@
 
         <!-- Activity History -->
         <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Recent Activity</h2>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="card-title">Recent Activity (Last 50 entries)</h2>
+                <a href="/admin/logs?mac={{ mac }}" class="btn btn-secondary btn-sm">View All Logs →</a>
             </div>
             <div class="card-body">
                 {% if history and history | length > 0 %}

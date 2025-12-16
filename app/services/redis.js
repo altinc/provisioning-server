@@ -471,10 +471,8 @@ class RedisService {
   }
 }
 
-// Create singleton instance
 const redisService = new RedisService();
 
-// Auto-connect on startup
 redisService.connect().catch(error => {
   logger.error('Initial Redis connection failed:', error);
 });

@@ -9,7 +9,7 @@ const { param, validationResult } = require('express-validator');
 const router = express.Router();
 
 const xmlAppsController = require('../controllers/xmlApps');
-const { validateAuthToken } = require('../utils/auth');
+const auth = require('../utils/auth');
 const logger = require('../utils/logger');
 
 // Validation middleware
@@ -53,8 +53,8 @@ const authenticateXmlApp = (req, res, next) => {
       });
       return res.status(403).send('Authentication token required');
     }
-    
-    const isValidToken = validateAuthToken(normalizedMac, token);
+
+    const isValidToken = auth.validateAuthToken(normalizedMac, token);
     if (!isValidToken) {
       logger.warn('Invalid token for XML App access', {
         ip: req.ip,

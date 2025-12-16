@@ -4,7 +4,7 @@ const path = require('path');
 const { param, query, validationResult } = require('express-validator');
 const router = express.Router();
 
-const { parseBasicAuth, validateBasicAuth, generateAuthToken } = require('../utils/auth');
+const auth = require('../utils/auth');
 const logger = require('../utils/logger');
 const redisService = require('../services/redis');
 const odooService = require('../services/odoo');
@@ -124,16 +124,25 @@ function parseLogEntry(line) {
 async function getDeviceHistory(mac) {
   try {
     const logs = await readLogFile('combined.log', 5000);
+    const macLower = mac.toLowerCase(); // Ensure lowercase for comparison
+
     const deviceLogs = logs
       .map(parseLogEntry)
-      .filter(entry => 
-        entry.mac === mac || 
-        (entry.message && entry.message.includes(mac)) ||
-        (entry.url && entry.url.includes(mac))
-      )
+      .filter(entry => {
+        // Check extracted MAC field (already lowercase from parseLogEntry)
+        if (entry.mac === macLower) return true;
+
+        // Check if MAC appears in message (case-insensitive)
+        if (entry.message && entry.message.toLowerCase().includes(macLower)) return true;
+
+        // Check if MAC appears in URL (case-insensitive)
+        if (entry.url && entry.url.toLowerCase().includes(macLower)) return true;
+
+        return false;
+      })
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 100);
-    
+      .slice(0, 50);
+
     return deviceLogs;
   } catch (error) {
     logger.error('Error getting device history:', error);
@@ -158,8 +167,8 @@ router.get('/login', (req, res) => {
 // Login handler
 router.post('/login', express.urlencoded({ extended: true }), (req, res) => {
   const { username, password } = req.body;
-  
-  if (validateBasicAuth(username, password)) {
+
+  if (auth.validateBasicAuth(username, password)) {
     // Set session
     req.session.authenticated = true;
     req.session.username = username;
@@ -322,60 +331,80 @@ router.get('/files/manager', (req, res) => {
   });
 });
 
-// Logs Viewer
+// Logs Viewer with pagination
 router.get('/logs', async (req, res) => {
-  const { 
-    file = 'combined', 
-    lines = 500, 
-    level, 
-    search, 
+  const {
+    file = 'combined',
+    page = 1,
+    perPage = 100,
+    level,
+    search,
     mac,
-    since 
+    since
   } = req.query;
-  
+
   try {
     const filename = file === 'error' ? 'error.log' : 'combined.log';
-    const logLines = await readLogFile(filename, parseInt(lines));
+    const pageNum = parseInt(page);
+    const logsPerPage = parseInt(perPage);
+
+    // Read more lines to account for pagination
+    const maxLines = 5000;
+    const logLines = await readLogFile(filename, maxLines);
     let parsedLogs = logLines.map(parseLogEntry);
-    
+
+    // Reverse FIRST to get newest logs at the start
+    parsedLogs.reverse();
+
     // Apply filters
     if (level) {
       parsedLogs = parsedLogs.filter(log => log.level === level);
     }
-    
+
     if (search) {
       const searchLower = search.toLowerCase();
-      parsedLogs = parsedLogs.filter(log => 
+      parsedLogs = parsedLogs.filter(log =>
         (log.message && log.message.toLowerCase().includes(searchLower)) ||
-        (log.ip && log.ip.includes(search)) ||
+        (log.ip && log.ip.toLowerCase().includes(searchLower)) ||
         (log.mac && log.mac.toLowerCase().includes(searchLower)) ||
         (log.url && log.url.toLowerCase().includes(searchLower))
       );
     }
-    
+
     if (mac) {
       const macNormalized = mac.replace(/[:-]/g, '').toLowerCase();
-      parsedLogs = parsedLogs.filter(log => 
+      parsedLogs = parsedLogs.filter(log =>
         (log.mac && log.mac === macNormalized) ||
         (log.url && log.url.includes(macNormalized))
       );
     }
-    
+
     if (since) {
       const sinceDate = new Date(since);
-      parsedLogs = parsedLogs.filter(log => 
+      parsedLogs = parsedLogs.filter(log =>
         new Date(log.timestamp) >= sinceDate
       );
     }
-    
-    // Reverse to show newest first
-    parsedLogs.reverse();
-    
+
+    // Calculate pagination
+    const totalLogs = parsedLogs.length;
+    const totalPages = Math.ceil(totalLogs / logsPerPage);
+    const currentPage = Math.max(1, Math.min(pageNum, totalPages));
+    const startIndex = (currentPage - 1) * logsPerPage;
+    const endIndex = startIndex + logsPerPage;
+
+    // Get page of logs
+    const pagedLogs = parsedLogs.slice(startIndex, endIndex);
+
     res.render('admin/logs.html', {
       title: 'Log Viewer',
-      logs: parsedLogs,
-      filters: { file, lines, level, search, mac, since },
-      totalLogs: parsedLogs.length
+      logs: pagedLogs,
+      filters: { file, page: currentPage, perPage: logsPerPage, level, search, mac, since },
+      totalLogs,
+      totalPages,
+      currentPage,
+      hasNextPage: currentPage < totalPages,
+      hasPrevPage: currentPage > 1
     });
   } catch (error) {
     logger.error('Error loading logs:', error);
@@ -503,7 +532,7 @@ router.get('/troubleshoot', (req, res) => {
   });
 });
 
-// Real-time logs endpoint (Server-Sent Events)
+// Real-time logs endpoint (Server-Sent Events) - FIXED to only send new logs
 router.get('/logs/stream', (req, res) => {
   // Set up Server-Sent Events
   res.writeHead(200, {
@@ -513,28 +542,50 @@ router.get('/logs/stream', (req, res) => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Cache-Control'
   });
-  
+
   // Send initial connection message
   res.write(`data: ${JSON.stringify({ type: 'connected', message: 'Log stream connected' })}\n\n`);
-  
-  // Set up log file watcher (simplified - in production, use proper file watching)
+
+  // Track the last timestamp we sent to avoid duplicates
+  let lastSentTimestamp = new Date().toISOString();
+
+  // Set up log file watcher - only send NEW logs
   const interval = setInterval(async () => {
     try {
-      const recentLogs = await readLogFile('combined.log', 10);
+      // Read last 50 lines to catch any new logs
+      const recentLogs = await readLogFile('combined.log', 50);
       const parsedLogs = recentLogs.map(parseLogEntry);
-      
-      res.write(`data: ${JSON.stringify({ 
-        type: 'logs', 
-        logs: parsedLogs.slice(-5) // Send last 5 entries
-      })}\n\n`);
+
+      // Filter to only logs newer than last sent timestamp
+      const newLogs = parsedLogs.filter(log => {
+        if (!log.timestamp) return false;
+        return new Date(log.timestamp) > new Date(lastSentTimestamp);
+      });
+
+      // If we have new logs, send them and update last timestamp
+      if (newLogs.length > 0) {
+        // Sort by timestamp (oldest first for this batch)
+        newLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        // Update last sent timestamp to the newest log
+        lastSentTimestamp = newLogs[newLogs.length - 1].timestamp;
+
+        res.write(`data: ${JSON.stringify({
+          type: 'logs',
+          logs: newLogs
+        })}\n\n`);
+
+        logger.debug(`Streamed ${newLogs.length} new log entries`);
+      }
     } catch (error) {
       logger.error('Error streaming logs:', error);
     }
-  }, 5000); // Update every 5 seconds
-  
+  }, 2000); // Check every 2 seconds
+
   // Clean up on client disconnect
   req.on('close', () => {
     clearInterval(interval);
+    logger.debug('Log stream client disconnected');
   });
 });
 
@@ -547,9 +598,9 @@ router.post('/api/token/:mac', [
   try {
     const { mac } = req.params;
     const normalizedMac = mac.replace(/[:-]/g, '').toLowerCase();
-    
-    const tokens = generateAuthToken(normalizedMac);
-    
+
+    const tokens = auth.generateAuthToken(normalizedMac);
+
     const response = {
       mac: normalizedMac,
       tokens: tokens,
@@ -827,7 +878,7 @@ if (process.env.NODE_ENV === 'development') {
         mac: normalizedMac,
         found: !!deviceData,
         data: deviceData,
-        tokens: generateAuthToken(normalizedMac),
+        tokens: auth.generateAuthToken(normalizedMac),
         timestamp: new Date().toISOString()
       });
     } catch (error) {

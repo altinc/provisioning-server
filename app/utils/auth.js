@@ -185,7 +185,7 @@ class AuthService {
     if (!authHeader || !authHeader.startsWith('Basic ')) {
       return null;
     }
-    
+
     try {
       const credentials = Buffer.from(authHeader.slice(6), 'base64').toString('utf-8');
       const [username, password] = credentials.split(':');
@@ -197,15 +197,4 @@ class AuthService {
   }
 }
 
-const authService = new AuthService();
-
-module.exports = {
-  generateAuthToken: (mac) => authService.generateAuthToken(mac),
-  validateAuthToken: (mac, token) => authService.validateAuthToken(mac, token),
-  generateProvisioningUrl: (mac, endpoint, baseUrl) => authService.generateProvisioningUrl(mac, endpoint, baseUrl),
-  createRotatingKeyService: () => authService.createRotatingKeyService(),
-  hashPassword: (password, salt) => authService.hashPassword(password, salt),
-  generateSalt: (length) => authService.generateSalt(length),
-  validateBasicAuth: (username, password) => authService.validateBasicAuth(username, password),
-  parseBasicAuth: (authHeader) => authService.parseBasicAuth(authHeader)
-};
+module.exports = new AuthService();

@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const multer = require('multer'); // Add this
 const { body, param, query, validationResult } = require('express-validator'); // Add param and body
-const { parseBasicAuth, validateBasicAuth } = require('../utils/auth');
+const auth = require('../utils/auth');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -29,18 +29,18 @@ const handleValidationErrors = (req, res, next) => {
 // Admin authentication middleware
 const requireAuth = (req, res, next) => {
   const authHeader = req.get('Authorization');
-  
+
   if (!authHeader) {
     res.set('WWW-Authenticate', 'Basic realm="Admin Area"');
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  const credentials = parseBasicAuth(authHeader);
-  if (!credentials || !validateBasicAuth(credentials.username, credentials.password)) {
+  const credentials = auth.parseBasicAuth(authHeader);
+  if (!credentials || !auth.validateBasicAuth(credentials.username, credentials.password)) {
     res.set('WWW-Authenticate', 'Basic realm="Admin Area"');
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  
+
   next();
 };
 

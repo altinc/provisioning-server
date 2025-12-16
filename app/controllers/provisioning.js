@@ -1,6 +1,6 @@
 const moment = require('moment-timezone');
 const logger = require('../utils/logger');
-const { createRotatingKeyService } = require('../utils/auth');
+const auth = require('../utils/auth');
 
 // Configuration constants
 const provisionUrl = process.env.PROVISION_URL_BASE || 'https://pro.altinc.ca/odoo';
@@ -77,9 +77,9 @@ function getCanadianTimezone(olsonTz) {
  */
 function processDeviceData(deviceData, mac, userAgent, isGroundwire = false) {
   const { device, site, partners, organizations } = deviceData;
-  
+
   // Generate token for provisioning URLs
-  const keyService = createRotatingKeyService();
+  const keyService = auth.createRotatingKeyService();
   const token = mac ? keyService.getCurrentAndNextKeys(mac).current : '';
   
   // Initialize template variables
@@ -233,7 +233,7 @@ function processDeviceData(deviceData, mac, userAgent, isGroundwire = false) {
 
     // For Groundwire, add token support
     if (isGroundwire && partners[0] && templateVars.username1) {
-      const keyService = createRotatingKeyService();
+      const keyService = auth.createRotatingKeyService();
       const tokens = keyService.getCurrentAndNextKeys(templateVars.username1);
       templateVars.token1 = tokens.current;
       templateVars.pid = partners[0].id || '';

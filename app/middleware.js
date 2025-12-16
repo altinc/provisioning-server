@@ -1,5 +1,5 @@
 const logger = require('./utils/logger');
-const { validateAuthToken, generateAuthToken } = require('./utils/auth');
+const auth = require('./utils/auth');
 const odooService = require('./services/odoo');
 
 // Track failed authentication attempts in memory (use Redis in production)
@@ -299,7 +299,7 @@ const authenticateDevice = async (req, res, next) => {
       
       // Still log what would have happened with token validation
       if (token) {
-        const isValidToken = validateAuthToken(normalizedMac, token);
+        const isValidToken = auth.validateAuthToken(normalizedMac, token);
         logger.info(`[DEBUG MODE] Token auth bypassed for device: ${normalizedMac}`, {
           ip: clientIP,
           ipSource,
@@ -326,7 +326,7 @@ const authenticateDevice = async (req, res, next) => {
 
     // Normal token validation (when DISABLE_TOKEN_AUTH is not set or false)
     if (token) {
-      const isValidToken = validateAuthToken(normalizedMac, token);
+      const isValidToken = auth.validateAuthToken(normalizedMac, token);
       if (!isValidToken) {
         recordFailedAttempt(clientIP, ipSource, { 
           mac: normalizedMac,
