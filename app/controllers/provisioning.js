@@ -20,6 +20,9 @@ const httpAuthPassword = process.env.HTTP_AUTH_PASSWORD || 'Jan2019!';
 
 // Use PROVISION_URL as the base for server address
 const serverAddr = provisionUrl
+
+// Maximum SIP accounts / FXS ports populated per device (e.g. GXW4224 = 24 FXS ports)
+const MAX_ACCOUNTS = 24;
 /**
  * Clean name by removing apostrophes
  */
@@ -111,8 +114,8 @@ function processDeviceData(deviceData, mac, userAgent, isGroundwire = false) {
     yealink_timezone_name: ''
   };
 
-  // Add user accounts (up to 8)
-  for (let i = 1; i <= 8; i++) {
+  // Add user accounts
+  for (let i = 1; i <= MAX_ACCOUNTS; i++) {
     templateVars[`ext${i}`] = '';
     templateVars[`display${i}`] = '';
     templateVars[`username${i}`] = '';
@@ -176,7 +179,7 @@ function processDeviceData(deviceData, mac, userAgent, isGroundwire = false) {
 
     // Process each partner/user account
     partners.forEach((partner, index) => {
-      if (index >= 8) return; // Max 8 accounts
+      if (index >= MAX_ACCOUNTS) return;
       
       const accountNum = index + 1;
       const org = organizations[index];
@@ -238,6 +241,20 @@ function processDeviceData(deviceData, mac, userAgent, isGroundwire = false) {
       templateVars.token1 = tokens.current;
       templateVars.pid = partners[0].id || '';
     }
+  }
+
+  // Expose accounts as an ordered array for templates that iterate ports
+  // (e.g. multi-port FXS gateways like the GXW4224). accounts[0] = port 1.
+  templateVars.accounts = [];
+  for (let i = 1; i <= MAX_ACCOUNTS; i++) {
+    templateVars.accounts.push({
+      ext: templateVars[`ext${i}`],
+      display: templateVars[`display${i}`],
+      username: templateVars[`username${i}`],
+      password: templateVars[`password${i}`],
+      server: templateVars[`server${i}`],
+      srvtoggle: templateVars[`srvtoggle${i}`]
+    });
   }
 
   return templateVars;

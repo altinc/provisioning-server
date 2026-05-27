@@ -281,7 +281,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const env = nunjucks.configure('templates', {
   autoescape: true,
   express: app,
-  watch: true,
+  // Watch templates for live reload, except under test where the chokidar
+  // handle would keep the Jest process alive. Prod/dev behaviour is unchanged.
+  watch: process.env.NODE_ENV !== 'test',
   trimBlocks: false,   // Change to false
   lstripBlocks: false,  // Change to false
   preserveLinebreaks: true,  // Add this
@@ -499,43 +501,53 @@ const gracefulShutdown = async (signal) => {
   process.exit(0);
 };
 
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+// Start the server and attach process-level handlers only when this file is run
+// directly (node app.js / npm start). When the module is required (e.g. by
+// supertest in the test suite) it is exported without binding a port or
+// registering signal/exception handlers.
+function startServer() {
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-  process.exit(1);
-});
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception:', error);
+    process.exit(1);
+  });
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
-});
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+  });
 
-// Start server
-app.listen(PORT, () => {
-  logger.info(`Provisioning server started on port ${PORT}`);
-  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.info(`Trust proxy: ${app.get('trust proxy')}`);
-  logger.info(`HTTPS enforcement: ${process.env.NODE_ENV === 'production' ? 'enabled' : 'disabled (dev mode)'}`);
-  logger.info(`Admin UI available at: /admin/dashboard`);
-  logger.info(`IP debugging available at: /debug/ip`);
-  
-  // Warn about debug configurations
-  if (process.env.DISABLE_TOKEN_AUTH === 'true') {
-    logger.error('🚨 DEBUG MODE: Token authentication is DISABLED! This should only be used for debugging/onboarding.');
-    logger.error('🚨 Set DISABLE_TOKEN_AUTH=false or remove the variable to re-enable security.');
-  }
-  
-  // Warn about insecure configurations
-  if (process.env.AUTH_SECRET === 'your-secret-here') {
-    logger.error('⚠️  CRITICAL: AUTH_SECRET is using default value! Change immediately!');
-  }
-  
-  if (process.env.NODE_ENV === 'production' && process.env.ADMIN_PASSWORD === 'Jan2019!') {
-    logger.error('⚠️  CRITICAL: Default admin password detected in production!');
-  }
-});
+  // Start server
+  return app.listen(PORT, () => {
+    logger.info(`Provisioning server started on port ${PORT}`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`Trust proxy: ${app.get('trust proxy')}`);
+    logger.info(`HTTPS enforcement: ${process.env.NODE_ENV === 'production' ? 'enabled' : 'disabled (dev mode)'}`);
+    logger.info(`Admin UI available at: /admin/dashboard`);
+    logger.info(`IP debugging available at: /debug/ip`);
+
+    // Warn about debug configurations
+    if (process.env.DISABLE_TOKEN_AUTH === 'true') {
+      logger.error('🚨 DEBUG MODE: Token authentication is DISABLED! This should only be used for debugging/onboarding.');
+      logger.error('🚨 Set DISABLE_TOKEN_AUTH=false or remove the variable to re-enable security.');
+    }
+
+    // Warn about insecure configurations
+    if (process.env.AUTH_SECRET === 'your-secret-here') {
+      logger.error('⚠️  CRITICAL: AUTH_SECRET is using default value! Change immediately!');
+    }
+
+    if (process.env.NODE_ENV === 'production' && process.env.ADMIN_PASSWORD === 'Jan2019!') {
+      logger.error('⚠️  CRITICAL: Default admin password detected in production!');
+    }
+  });
+}
+
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = app;
