@@ -665,7 +665,7 @@ const validateMac = (req, res, next) => {
 };
 
 // Clean up failed attempts map periodically
-setInterval(() => {
+const failedAttemptsCleanup = setInterval(() => {
   const now = Date.now();
   for (const [ip, attempts] of failedAttempts.entries()) {
     if (now - attempts.lastAttempt > LOCKOUT_DURATION) {
@@ -673,6 +673,9 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000); // Clean up every 5 minutes
+
+// Housekeeping timer must not keep the process alive on its own (tests, CLI scripts)
+failedAttemptsCleanup.unref();
 
 module.exports = {
   requestLogger,

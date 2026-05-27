@@ -3,6 +3,10 @@
 .env.local
 .env.*.local
 
+# Node dependencies (installed via npm install in Docker; not tracked)
+node_modules/
+package-lock.json
+
 # SSL certificates
 ssl/*.pem
 ssl/*.crt
