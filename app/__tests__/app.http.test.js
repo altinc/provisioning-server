@@ -32,6 +32,7 @@ jest.mock('../services/odoo', () => ({
 
 const request = require('supertest');
 const odoo = require('../services/odoo');
+const auth = require('../utils/auth'); // real auth (logger is mocked) to mint valid tokens
 const app = require('../app');
 
 afterAll(() => {
@@ -104,5 +105,31 @@ describe('GXW4224 provisioning over HTTP (end to end)', () => {
       .set('User-Agent', 'Grandstream GXW4224 1.0.3.10');
 
     expect(res.status).toBe(404);
+  });
+});
+
+// Regression coverage for the Yealink XML-apps flow after removing the duplicate
+// buildYealinkAppUrl declaration. Confirms the (now single) definition still
+// produces correct navigation URLs end to end.
+describe('Yealink XML-apps menu flow', () => {
+  const mac = '805ec0aabbcc';
+
+  test('renders the apps menu with correctly-built per-feature URLs', async () => {
+    const token = auth.generateAuthToken(mac).current;
+
+    const res = await request(app).get(`/xmlAppsYealink/menu/${token}/${mac}`);
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/xml/);
+    expect(res.text).toMatch(/<YealinkIPPhoneTextMenu/);
+    // buildYealinkAppUrl output shape: <base>/xmlAppsYealink/<feature>/<token>/<mac>
+    expect(res.text).toContain(`/xmlAppsYealink/cfwd/${token}/${mac}`);
+    expect(res.text).toContain(`/xmlAppsYealink/voicemail/${token}/${mac}`);
+    expect(res.text).toContain(`/xmlAppsYealink/redirect/${token}/${mac}`);
+  });
+
+  test('rejects an invalid token with 403', async () => {
+    const res = await request(app).get(`/xmlAppsYealink/menu/0000000000000000/${mac}`);
+    expect(res.status).toBe(403);
   });
 });
