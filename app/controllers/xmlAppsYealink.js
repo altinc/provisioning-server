@@ -96,39 +96,6 @@ function getBaseUrl(req) {
 }
 
 /**
- * Build URL for Yealink XML app navigation
- * @param {Object} req - Express request object 
- * @param {string} feature - Feature name (e.g., "cfwd", "voicemail")
- * @param {Object} params - Additional query parameters
- * @returns {string} Full URL
- */
-function buildYealinkAppUrl(req, feature, params = {}) {
-  const baseUrl = getBaseUrl(req);
-  
-  // Get token and MAC from request
-  const token = req.authToken;
-  const mac = req.normalizedMac;
-  
-  // Build the base URL with the path format for path parameters
-  let url = `${baseUrl}/xmlAppsYealink/${feature}/${token}/${mac}`;
-  
-  // Add additional query parameters
-  if (Object.keys(params).length > 0) {
-    const queryString = Object.entries(params)
-      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-      .join('&');
-    url += `?${queryString}`;
-  }
-  
-  logger.debug(`Built URL for Yealink ${feature}: ${url}`, {
-    mac: mac,
-    token: token ? 'present' : 'missing'
-  });
-  
-  return url;
-}
-
-/**
  * Render the Yealink XML apps menu
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
