@@ -420,6 +420,9 @@ const detectDeviceType = (req, res, next) => {
   } else if (userAgent.includes('HT814') || userAgent.includes('HT818')) {
     deviceType = 'grandstream_ata';
     templateFile = 'HT818.xml';
+  } else if (userAgent.includes('GXW4216') || userAgent.includes('GXW4224')) {
+    deviceType = 'grandstream_gateway';
+    templateFile = 'GXW4224.xml';
   } else if (userAgent.includes('SPA303') || userAgent.includes('SPA504G')) {
     deviceType = 'cisco_spa';
     templateFile = 'SPA303.xml';

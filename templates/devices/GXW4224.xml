@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- GXW42xx FXS Gateway provisioning (GXW4216 / GXW4224, up to 24 FXS ports). -->
+<!-- Per-port account codes follow the Grandstream GXW42xx XML format: -->
+<!--   FXS port N -> SIP User ID P(4059+N), Authenticate ID P(4089+N), -->
+<!--   Authenticate Password P(4119+N), Name P(4179+N). -->
+<!--   Shared SIP account settings live in PROFILE 1 (Primary SIP Server = P47). -->
+
+<gs_provision version="1">
+<mac>{{ mac }}</mac>
+<config version="1">
+
+<!-- Time Zone -->
+<P64>{{ tz }}</P64>
+<P246>{{ tz }}</P246>
+
+<!-- Admin password for web interface -->
+<P2>Neufone2020</P2>
+<!-- End User Password -->
+<P196>password</P196>
+
+<!-- Firmware Upgrade and Provisioning. 0 - TFTP, 1 - HTTP, 2 - HTTPS -->
+<P212>1</P212>
+<!-- Firmware Server Path -->
+<P192>pro.altinc.ca/fw</P192>
+<!-- Config Server Path -->
+<P237>pro.altinc.ca/odoo</P237>
+<!-- Allow DHCP Option 66 to override server. 0 - No, 1 - Yes -->
+<P145>1</P145>
+<!-- Automatic Upgrade. 0 - No, 1 - daily, 2 - weekly, 3 - every N minutes -->
+<P194>3</P194>
+<!-- Check for new firmware/config every N minutes (P194 = 3) -->
+<P193>10080</P193>
+<!-- Always check for new firmware -->
+<P238>0</P238>
+
+<!-- NTP Server -->
+<P30>pool.ntp.org</P30>
+
+<!-- ============ PROFILE 1 (shared SIP settings for all FXS ports) ============ -->
+<!-- Profile Active. 0 - No, 1 - Yes -->
+<P271>1</P271>
+<!-- Primary SIP Server -->
+<P47>{{ server1 }}</P47>
+<!-- Outbound Proxy -->
+<P48></P48>
+<!-- SIP Transport. 0 - UDP, 1 - TCP, 2 - TLS -->
+<P130>0</P130>
+<!-- NAT Traversal. 0 - No, 1 - STUN, 2 - keep-alive -->
+<P52>2</P52>
+<!-- DNS Mode. 0 - A Record, 1 - SRV, 2 - NAPTR/SRV, 3 - Use Configured IP -->
+<P103>{{ srvtoggle }}</P103>
+<!-- SIP Registration. 0 - No, 1 - Yes -->
+<P31>1</P31>
+<!-- Register Expiration (minutes) -->
+<P32>60</P32>
+<!-- Local SIP Port -->
+<P40>5060</P40>
+
+<!-- ===================== FXS PORT ACCOUNTS (ports 1-24) ===================== -->
+<!-- Ports without an assigned extension are left blank and will not register. -->
+{% for acct in accounts %}
+<!-- FXS Port {{ loop.index }} -->
+<P{{ 4059 + loop.index }}>{{ acct.username }}</P{{ 4059 + loop.index }}>
+<P{{ 4089 + loop.index }}>{{ acct.username }}</P{{ 4089 + loop.index }}>
+<P{{ 4119 + loop.index }}>{{ acct.password }}</P{{ 4119 + loop.index }}>
+<P{{ 4179 + loop.index }}>{{ acct.display }}</P{{ 4179 + loop.index }}>
+{% endfor %}
+</config>
+</gs_provision>
